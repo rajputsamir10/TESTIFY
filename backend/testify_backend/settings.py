@@ -13,6 +13,7 @@ env = environ.Env(
     DEBUG=(bool, False),
     DB_PORT=(int, 5432),
     EMAIL_PORT=(int, 587),
+    EMAIL_TIMEOUT=(int, 10),
     EMAIL_USE_TLS=(bool, True),
 )
 django_env = env("DJANGO_ENV", default="development").strip().lower()
@@ -199,6 +200,7 @@ CORS_ALLOW_CREDENTIALS = True
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = env("EMAIL_HOST", default="smtp.gmail.com")
 EMAIL_PORT = env("EMAIL_PORT")
+EMAIL_TIMEOUT = env("EMAIL_TIMEOUT")
 EMAIL_USE_TLS = env("EMAIL_USE_TLS")
 EMAIL_HOST_USER = env("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")

@@ -4,7 +4,6 @@ from datetime import timedelta
 
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.cache import cache
-from django.core.mail import send_mail
 from django.db import IntegrityError, transaction
 from django.db.models import Count
 from django.utils import timezone
@@ -31,6 +30,11 @@ ADMIN_SIGNUP_OTP_MINUTES = 10
 class LockedAccountError(APIException):
     status_code = status.HTTP_423_LOCKED
     default_detail = "Account locked. Try again later."
+
+
+class EmailDeliveryError(APIException):
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    default_detail = "Email service is temporarily unavailable. Please try again later."
 
 
 def _generate_tokens(user: CustomUser) -> dict:
@@ -150,7 +154,7 @@ def request_admin_signup_otp(email: str) -> str:
     )
     cache.delete(_admin_signup_verified_cache_key(normalized_email))
 
-    send_platform_email(
+    delivered = send_platform_email(
         normalized_email,
         "Testify admin signup verification code",
         (
@@ -158,6 +162,11 @@ def request_admin_signup_otp(email: str) -> str:
             f"{otp}. It expires in {ADMIN_SIGNUP_OTP_MINUTES} minutes."
         ),
     )
+    if not delivered:
+        cache.delete(_admin_signup_otp_cache_key(normalized_email))
+        logger.error("Admin signup OTP email delivery failed for %s", normalized_email)
+        raise EmailDeliveryError()
+
     logger.info("Admin signup OTP issued for %s", normalized_email)
     return normalized_email
 
@@ -384,13 +393,16 @@ def forgot_password(identifier: str, role: str = None):
     )
 
     logger.info("OTP requested for %s", email)
-    send_mail(
-        subject="Testify password reset OTP",
-        message=f"Your OTP is {raw_code}. It expires in {OTP_MINUTES} minutes.",
-        from_email=None,
-        recipient_list=[email],
-        fail_silently=False,
+    delivered = send_platform_email(
+        email,
+        "Testify password reset OTP",
+        f"Your OTP is {raw_code}. It expires in {OTP_MINUTES} minutes.",
     )
+    if not delivered:
+        otp.is_used = True
+        otp.save(update_fields=["is_used"])
+        logger.error("Password reset OTP email delivery failed for %s", email)
+        raise EmailDeliveryError()
 
     return email
 
