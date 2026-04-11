@@ -64,6 +64,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -150,6 +151,7 @@ STATICFILES_DIRS = []
 static_dir = BASE_DIR / "static"
 if static_dir.exists():
     STATICFILES_DIRS.append(static_dir)
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Authentication
 AUTH_USER_MODEL = "accounts.CustomUser"
