@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.sqlite3
+
+# Virtual environments
+.venv/
+venv/
+
+# Backend runtime/generated
+backend/.env
+backend/.env.production
+backend/media/
+backend/staticfiles/
+
+# Frontend runtime/generated
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+frontend/.env.*.local
+
+# General logs and temp
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
