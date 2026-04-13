@@ -1,9 +1,10 @@
-import { BarChart2, BookOpenCheck, LayoutDashboard, Settings, UserCircle2 } from 'lucide-react'
+import { BarChart2, BookOpenCheck, LayoutDashboard, Puzzle, Settings, UserCircle2 } from 'lucide-react'
 import AppShell from '../components/AppShell'
 
 const links = [
   { to: '/student', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/student/exams', label: 'Available Exams', icon: BookOpenCheck },
+  { to: '/student/playground', label: 'Playground', icon: Puzzle },
   { to: '/student/results', label: 'Results', icon: BarChart2 },
   { to: '/student/profile', label: 'Profile', icon: UserCircle2 },
 ]

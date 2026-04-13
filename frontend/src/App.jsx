@@ -35,6 +35,7 @@ import ExamDisclaimer from './pages/student/ExamDisclaimer.jsx'
 import ExamInterface from './pages/student/ExamInterface.jsx'
 import Results from './pages/student/Results.jsx'
 import Profile from './pages/student/Profile.jsx'
+import Playground from './pages/student/Playground.jsx'
 import ThemeToggleButton from './components/ThemeToggleButton.jsx'
 import LoadingSpinner from './components/LoadingSpinner.jsx'
 import { useAuth } from './context/AuthContext.jsx'
@@ -121,6 +122,7 @@ function App() {
         >
           <Route index element={<StudentDashboard />} />
           <Route path="exams" element={<AvailableExams />} />
+          <Route path="playground" element={<Playground />} />
           <Route path="exams/:id/instructions" element={<ExamInstructions />} />
           <Route path="exams/:id/disclaimer" element={<ExamDisclaimer />} />
           <Route path="exams/:id/attempt" element={<ExamInterface />} />

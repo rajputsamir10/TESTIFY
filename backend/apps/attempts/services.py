@@ -1,10 +1,16 @@
 import logging
 import hashlib
+import json
+import re
 from datetime import timedelta
 from decimal import Decimal
 from io import BytesIO
 
+import requests
+from django.conf import settings
 from django.db.models import Q, Sum
+from django.db.models import Avg
+from django.db import transaction
 from django.http import HttpResponse
 from django.utils import timezone
 from openpyxl import Workbook
@@ -14,7 +20,13 @@ from reportlab.pdfgen import canvas
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
 from apps.attempts.execution import execute_code, score_from_execution_result
-from apps.attempts.models import Answer, Attempt
+from apps.attempts.models import (
+    Answer,
+    Attempt,
+    PlaygroundAnswer,
+    PlaygroundQuestion,
+    PlaygroundSession,
+)
 from apps.exams.models import Exam
 from apps.questions.models import MCQOption, Question
 from apps.results.models import Result
@@ -632,3 +644,386 @@ def _build_pdf_response(result, answers):
     response = HttpResponse(stream.getvalue(), content_type="application/pdf")
     response["Content-Disposition"] = f'attachment; filename="result_{result.id}.pdf"'
     return response
+
+
+def _require_playground_enrollment(user):
+    _require_student(user)
+    if not user.organization_id or not user.department_id or not user.course_id:
+        raise ValidationError(
+            {
+                "detail": (
+                    "Playground is available only for students enrolled in both "
+                    "a department and a course."
+                )
+            }
+        )
+
+
+def _extract_json_payload(text):
+    raw_text = str(text or "").strip()
+    if not raw_text:
+        raise ValidationError({"detail": "Gemini returned an empty response."})
+
+    fenced = re.search(r"```(?:json)?\s*(.*?)\s*```", raw_text, re.IGNORECASE | re.DOTALL)
+    if fenced:
+        raw_text = fenced.group(1).strip()
+
+    try:
+        return json.loads(raw_text)
+    except json.JSONDecodeError as exc:
+        raise ValidationError(
+            {"detail": "Gemini returned invalid JSON for playground questions."}
+        ) from exc
+
+
+def _normalize_playground_questions(raw_questions, requested_count):
+    if not isinstance(raw_questions, list):
+        raise ValidationError({"detail": "Gemini response must include a questions array."})
+
+    normalized = []
+    for item in raw_questions:
+        if not isinstance(item, dict):
+            continue
+
+        question_text = str(item.get("question_text", "")).strip()
+        options = item.get("options")
+        explanation = str(item.get("explanation", "")).strip()
+
+        if not question_text or not isinstance(options, list):
+            continue
+
+        cleaned_options = [str(option).strip() for option in options if str(option).strip()]
+        if len(cleaned_options) < 4:
+            continue
+        cleaned_options = cleaned_options[:4]
+
+        try:
+            correct_option_index = int(item.get("correct_option_index", 0))
+        except (TypeError, ValueError):
+            correct_option_index = 0
+
+        if correct_option_index < 0 or correct_option_index >= len(cleaned_options):
+            correct_option_index = 0
+
+        normalized.append(
+            {
+                "question_text": question_text,
+                "options": cleaned_options,
+                "correct_option_index": correct_option_index,
+                "explanation": explanation,
+            }
+        )
+
+        if len(normalized) >= requested_count:
+            break
+
+    if not normalized:
+        raise ValidationError(
+            {
+                "detail": (
+                    "Unable to generate valid practice questions for this topic. "
+                    "Please try a more specific topic."
+                )
+            }
+        )
+
+    return normalized
+
+
+def _generate_questions_with_gemini(user, topic, difficulty, question_count):
+    api_key = getattr(settings, "GEMINI_API_KEY", "").strip()
+    if not api_key:
+        raise ValidationError(
+            {"detail": "Gemini API key is not configured on the backend."}
+        )
+
+    configured_model = (
+        getattr(settings, "GEMINI_MODEL", "gemini-2.5-flash").strip()
+        or "gemini-2.5-flash"
+    )
+    base_url = getattr(
+        settings,
+        "GEMINI_API_URL",
+        "https://generativelanguage.googleapis.com",
+    ).rstrip("/")
+    timeout_seconds = int(getattr(settings, "PLAYGROUND_GENERATE_TIMEOUT_SECONDS", 25))
+
+    prompt = (
+        "You are generating practice multiple-choice questions for a student exam playground. "
+        "Return ONLY valid JSON with this exact structure: "
+        '{"questions":[{"question_text":"...","options":["A","B","C","D"],'
+        '"correct_option_index":0,"explanation":"..."}]}. '
+        f"Generate {question_count} questions. "
+        f"Topic: {topic}. "
+        f"Difficulty: {difficulty}. "
+        f"Student department: {user.department.name}. "
+        f"Student course: {user.course.name}. "
+        "Questions must stay inside this enrolled course context."
+    )
+
+    payload = {
+        "contents": [
+            {
+                "parts": [
+                    {
+                        "text": prompt,
+                    }
+                ]
+            }
+        ],
+        "generationConfig": {
+            "temperature": 0.6,
+            "responseMimeType": "application/json",
+        },
+    }
+
+    model_candidates = []
+    for candidate in (
+        configured_model,
+        "gemini-2.5-flash",
+        "gemini-2.0-flash",
+        "gemini-flash-latest",
+    ):
+        normalized = str(candidate or "").strip()
+        if normalized.startswith("models/"):
+            normalized = normalized.split("/", 1)[1]
+        if normalized and normalized not in model_candidates:
+            model_candidates.append(normalized)
+
+    attempt_errors = []
+    for model_name in model_candidates:
+        endpoint = f"{base_url}/v1beta/models/{model_name}:generateContent"
+
+        try:
+            response = requests.post(
+                endpoint,
+                params={"key": api_key},
+                json=payload,
+                timeout=timeout_seconds,
+            )
+        except requests.RequestException as exc:
+            raise ValidationError(
+                {"detail": "Gemini request failed. Please try again shortly."}
+            ) from exc
+
+        if response.status_code >= 400:
+            attempt_errors.append(f"{model_name}:{response.status_code}")
+            if response.status_code in (404, 429, 503):
+                continue
+
+            raise ValidationError(
+                {
+                    "detail": (
+                        "Gemini request failed with status "
+                        f"{response.status_code}. Check API key, model, and quota limits."
+                    )
+                }
+            )
+
+        try:
+            response_data = response.json()
+        except ValueError:
+            attempt_errors.append(f"{model_name}:invalid_json")
+            continue
+
+        candidates = response_data.get("candidates") or []
+        if not candidates:
+            attempt_errors.append(f"{model_name}:no_candidates")
+            continue
+
+        parts = (candidates[0].get("content") or {}).get("parts") or []
+        generated_text = "".join(
+            str(part.get("text", "")) for part in parts if isinstance(part, dict)
+        )
+
+        try:
+            parsed = _extract_json_payload(generated_text)
+            raw_questions = parsed.get("questions") if isinstance(parsed, dict) else None
+            questions = _normalize_playground_questions(raw_questions, question_count)
+        except ValidationError:
+            attempt_errors.append(f"{model_name}:invalid_payload")
+            continue
+
+        return model_name, questions
+
+    error_suffix = ""
+    if attempt_errors:
+        error_suffix = f" Tried models ({', '.join(attempt_errors[:4])})."
+
+    raise ValidationError(
+        {
+            "detail": (
+                "Gemini request failed for all candidate models. "
+                "Check model availability and quota limits."
+                f"{error_suffix}"
+            )
+        }
+    )
+
+
+def generate_playground_session(user, topic, difficulty, question_count):
+    _require_playground_enrollment(user)
+
+    max_questions = int(getattr(settings, "PLAYGROUND_MAX_QUESTION_COUNT", 10))
+    if question_count > max_questions:
+        raise ValidationError({"detail": f"Maximum allowed question_count is {max_questions}."})
+
+    model_name, generated_questions = _generate_questions_with_gemini(
+        user,
+        topic=topic,
+        difficulty=difficulty,
+        question_count=question_count,
+    )
+
+    with transaction.atomic():
+        session = PlaygroundSession.objects.create(
+            organization_id=user.organization_id,
+            student=user,
+            department_id=user.department_id,
+            course_id=user.course_id,
+            topic=topic,
+            difficulty=difficulty,
+            requested_question_count=question_count,
+            generated_question_count=len(generated_questions),
+            generator_model=model_name,
+        )
+
+        PlaygroundQuestion.objects.bulk_create(
+            [
+                PlaygroundQuestion(
+                    session=session,
+                    organization_id=user.organization_id,
+                    question_text=row["question_text"],
+                    options=row["options"],
+                    correct_option_index=row["correct_option_index"],
+                    explanation=row["explanation"],
+                    order=index,
+                )
+                for index, row in enumerate(generated_questions, start=1)
+            ]
+        )
+
+        created_questions = list(session.questions.order_by("order"))
+        PlaygroundAnswer.objects.bulk_create(
+            [
+                PlaygroundAnswer(
+                    session=session,
+                    question=question,
+                )
+                for question in created_questions
+            ]
+        )
+
+    return session
+
+
+def list_playground_sessions(user):
+    _require_playground_enrollment(user)
+    return PlaygroundSession.objects.filter(
+        organization_id=user.organization_id,
+        student=user,
+    ).order_by("-created_at")
+
+
+def get_playground_session(user, session_id):
+    _require_playground_enrollment(user)
+    session = PlaygroundSession.objects.filter(
+        id=session_id,
+        organization_id=user.organization_id,
+        student=user,
+    ).first()
+    if not session:
+        raise NotFound("Playground session not found.")
+    return session
+
+
+def get_playground_questions_with_answers(user, session_id):
+    session = get_playground_session(user, session_id)
+    questions = list(session.questions.order_by("order"))
+    answer_rows = list(
+        PlaygroundAnswer.objects.filter(session=session).select_related("question")
+    )
+    answer_map = {str(answer.question_id): answer for answer in answer_rows}
+    return session, questions, answer_map
+
+
+def submit_playground_session(user, session_id, answers_payload):
+    session = get_playground_session(user, session_id)
+    if session.status == "submitted":
+        return session
+
+    answers_by_question = {
+        str(row["question_id"]): int(row["selected_option_index"])
+        for row in answers_payload
+    }
+
+    answer_rows = list(
+        PlaygroundAnswer.objects.filter(session=session).select_related("question")
+    )
+    answer_map = {str(answer.question_id): answer for answer in answer_rows}
+
+    for question_id in answers_by_question:
+        if question_id not in answer_map:
+            raise ValidationError({"answers": "One or more question_id values are invalid."})
+
+    with transaction.atomic():
+        for question_id, answer in answer_map.items():
+            selected = answers_by_question.get(question_id)
+            answer.selected_option_index = selected
+            answer.is_correct = (
+                selected is not None and selected == answer.question.correct_option_index
+            )
+
+        PlaygroundAnswer.objects.bulk_update(
+            answer_map.values(),
+            ["selected_option_index", "is_correct", "updated_at"],
+        )
+
+        total_questions = len(answer_map)
+        correct_answers = sum(
+            1 for answer in answer_map.values() if answer.is_correct
+        )
+
+        score_percent = Decimal("0.00")
+        if total_questions > 0:
+            score_percent = (
+                (Decimal(correct_answers) / Decimal(total_questions)) * Decimal("100")
+            ).quantize(Decimal("0.01"))
+
+        session.status = "submitted"
+        session.submitted_at = timezone.now()
+        session.correct_answers = correct_answers
+        session.score_percent = score_percent
+        session.save(
+            update_fields=[
+                "status",
+                "submitted_at",
+                "correct_answers",
+                "score_percent",
+            ]
+        )
+
+    return session
+
+
+def get_playground_summary(user):
+    _require_playground_enrollment(user)
+    queryset = PlaygroundSession.objects.filter(
+        organization_id=user.organization_id,
+        student=user,
+    )
+
+    submitted = queryset.filter(status="submitted")
+    aggregate = submitted.aggregate(
+        total_questions=Sum("generated_question_count"),
+        total_correct=Sum("correct_answers"),
+        average_score=Avg("score_percent"),
+    )
+
+    return {
+        "total_tests": queryset.count(),
+        "submitted_tests": submitted.count(),
+        "total_questions": int(aggregate["total_questions"] or 0),
+        "total_correct": int(aggregate["total_correct"] or 0),
+        "average_score": str((aggregate["average_score"] or Decimal("0.00")).quantize(Decimal("0.01"))),
+    }

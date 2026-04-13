@@ -2,6 +2,11 @@ import api from './axios'
 
 export const studentAPI = {
   getAvailableExams: () => api.get('/student/exams/available/'),
+  generatePlaygroundQuestions: (payload) => api.post('/student/playground/generate/', payload),
+  listPlaygroundSessions: () => api.get('/student/playground/sessions/'),
+  getPlaygroundSession: (sessionId) => api.get(`/student/playground/sessions/${sessionId}/`),
+  submitPlaygroundSession: (sessionId, payload) => api.post(`/student/playground/sessions/${sessionId}/submit/`, payload),
+  getPlaygroundSummary: () => api.get('/student/playground/summary/'),
   startExam: (examId) => api.post(`/student/exams/${examId}/start/`),
   getRemainingTime: (attemptId) => api.get(`/student/attempts/${attemptId}/remaining-time/`),
   getAttemptAnswers: (attemptId) => api.get(`/student/attempts/${attemptId}/answers/`),

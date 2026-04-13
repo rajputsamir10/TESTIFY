@@ -85,7 +85,7 @@ function StudentDashboard() {
       <section className="grid gap-3.5 md:grid-cols-3">
         <Link
           to="/student/exams"
-          className="group relative block overflow-hidden rounded-3xl border border-white bg-[linear-gradient(135deg,#ffffff_0%,#f8faff_100%)] p-4 shadow-[0_20px_50px_-12px_rgba(74,64,224,0.08)] transition-all duration-500 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#4a40e0]/20"
+          className="group relative block overflow-hidden card rounded-3xl p-4 transition-all duration-500 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#4a40e0]/20"
           aria-label="Open available exams"
         >
           <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-[#4a40e0]/5 transition-transform duration-700 group-hover:scale-150" />
@@ -104,7 +104,7 @@ function StudentDashboard() {
 
         <Link
           to="/student/results"
-          className="group relative block overflow-hidden rounded-3xl border border-white bg-[linear-gradient(135deg,#ffffff_0%,#f8faff_100%)] p-4 shadow-[0_20px_50px_-12px_rgba(74,64,224,0.08)] transition-all duration-500 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#4a40e0]/20"
+          className="group relative block overflow-hidden card rounded-3xl p-4 transition-all duration-500 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#4a40e0]/20"
           aria-label="Open published results"
         >
           <div className="absolute -right-8 -bottom-8 h-32 w-32 rounded-full bg-[#702ae1]/5 transition-transform duration-700 group-hover:scale-150" />
@@ -123,7 +123,7 @@ function StudentDashboard() {
 
         <Link
           to="/student/results"
-          className="group relative block overflow-hidden rounded-3xl border border-white bg-[linear-gradient(135deg,#ffffff_0%,#f8faff_100%)] p-4 shadow-[0_20px_50px_-12px_rgba(74,64,224,0.08)] transition-all duration-500 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#4a40e0]/20"
+          className="group relative block overflow-hidden card rounded-3xl p-4 transition-all duration-500 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#4a40e0]/20"
           aria-label="Open result summary"
         >
           <div className="relative z-10 mb-4 flex items-center justify-between">
@@ -183,7 +183,7 @@ function StudentDashboard() {
                   key={exam.id}
                   to={`/student/exams/${exam.id}/instructions`}
                   state={{ exam }}
-                  className="rounded-2xl border border-white/70 bg-white/65 p-3 shadow-sm backdrop-blur transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_30px_-20px_rgba(74,64,224,0.5)]"
+                  className="card rounded-2xl p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_30px_-20px_rgba(74,64,224,0.5)]"
                   aria-label={`Open instructions for ${exam.title}`}
                 >
                   <div className="mb-1.5 flex items-start justify-between gap-3">
@@ -217,7 +217,7 @@ function StudentDashboard() {
           </div>
 
           {latestResult ? (
-            <div className="group relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/70 p-4 shadow-[0_20px_50px_-12px_rgba(74,64,224,0.08)] backdrop-blur transition-all duration-500 hover:-translate-y-1.5">
+            <div className="group relative overflow-hidden card rounded-[2rem] p-4 transition-all duration-500 hover:-translate-y-1.5">
               <div className="absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-[#4a40e0]/8 blur-3xl transition-colors group-hover:bg-[#4a40e0]/14" />
               <div className="relative z-10 mb-4 flex items-start justify-between gap-3">
                 <div>
@@ -269,7 +269,7 @@ function StudentDashboard() {
               </div>
             </div>
           ) : (
-            <div className="rounded-[2rem] border border-slate-200/60 bg-white/45 p-6 text-center text-sm font-medium text-[#6c778c]">
+            <div className="card rounded-[2rem] p-6 text-center text-sm font-medium text-[#6c778c]">
               No published results yet.
             </div>
           )}
@@ -280,7 +280,7 @@ function StudentDashboard() {
                 <Link
                   key={result.id}
                   to="/student/results"
-                  className="flex items-center gap-3 rounded-2xl border border-slate-200/60 bg-white/45 p-3 transition-all hover:-translate-y-0.5 hover:shadow-[0_14px_28px_-24px_rgba(74,64,224,0.6)]"
+                  className="card flex items-center gap-3 rounded-2xl p-3 transition-all hover:-translate-y-0.5 hover:shadow-[0_14px_28px_-24px_rgba(74,64,224,0.6)]"
                   aria-label={`Open results page for ${result.exam_title || 'exam result'}`}
                 >
                   <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#ecf1ff] text-[#4a40e0]">
@@ -297,7 +297,7 @@ function StudentDashboard() {
               ))}
             </div>
           ) : (
-            <div className="rounded-[2rem] border border-slate-200/60 bg-white/45 p-6 text-center text-sm font-medium text-[#6c778c]">
+            <div className="card rounded-[2rem] p-6 text-center text-sm font-medium text-[#6c778c]">
               No more recent results to show right now.
             </div>
           )}

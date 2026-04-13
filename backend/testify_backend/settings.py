@@ -15,6 +15,9 @@ env = environ.Env(
     EMAIL_PORT=(int, 587),
     EMAIL_TIMEOUT=(int, 10),
     EMAIL_USE_TLS=(bool, True),
+    PLAYGROUND_DEFAULT_QUESTION_COUNT=(int, 5),
+    PLAYGROUND_MAX_QUESTION_COUNT=(int, 10),
+    PLAYGROUND_GENERATE_TIMEOUT_SECONDS=(int, 25),
 )
 django_env = env("DJANGO_ENV", default="development").strip().lower()
 env_file_name = ".env.production" if django_env in {"production", "prod"} else ".env"
@@ -170,6 +173,18 @@ AUTH_COOKIE_DOMAIN = env("AUTH_COOKIE_DOMAIN", default="") or None
 # OnlineCompiler.io code execution API
 ONLINECOMPILER_API_URL = env("ONLINECOMPILER_API_URL", default="https://api.onlinecompiler.io")
 ONLINECOMPILER_API_KEY = env("ONLINECOMPILER_API_KEY", default="")
+
+# Gemini playground generation API
+GEMINI_API_URL = env("GEMINI_API_URL", default="https://generativelanguage.googleapis.com")
+GEMINI_API_KEY = env("GEMINI_API_KEY", default="")
+GEMINI_MODEL = env("GEMINI_MODEL", default="gemini-2.5-flash")
+
+# Student playground safety limits
+PLAYGROUND_DEFAULT_QUESTION_COUNT = env("PLAYGROUND_DEFAULT_QUESTION_COUNT")
+PLAYGROUND_MAX_QUESTION_COUNT = env("PLAYGROUND_MAX_QUESTION_COUNT")
+PLAYGROUND_GENERATE_TIMEOUT_SECONDS = env("PLAYGROUND_GENERATE_TIMEOUT_SECONDS")
+PLAYGROUND_STUDENT_RATE_LIMIT = env("PLAYGROUND_STUDENT_RATE_LIMIT", default="3/m")
+PLAYGROUND_IP_RATE_LIMIT = env("PLAYGROUND_IP_RATE_LIMIT", default="20/m")
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (

@@ -1,7 +1,13 @@
+from django.conf import settings
 from rest_framework import serializers
 
 from apps.accounts.models import CustomUser
-from apps.attempts.models import Answer, Attempt
+from apps.attempts.models import (
+    Answer,
+    Attempt,
+    PlaygroundQuestion,
+    PlaygroundSession,
+)
 from apps.exams.models import Exam
 from apps.results.models import Result
 
@@ -133,3 +139,117 @@ class StudentResultSerializer(serializers.ModelSerializer):
             "published_at",
             "created_at",
         ]
+
+
+class PlaygroundGenerateRequestSerializer(serializers.Serializer):
+    topic = serializers.CharField(min_length=2, max_length=200)
+    difficulty = serializers.ChoiceField(
+        choices=["easy", "medium", "hard"],
+        required=False,
+        default="medium",
+    )
+    question_count = serializers.IntegerField(required=False, min_value=1)
+
+    def validate_question_count(self, value):
+        max_questions = int(getattr(settings, "PLAYGROUND_MAX_QUESTION_COUNT", 10))
+        if value > max_questions:
+            raise serializers.ValidationError(
+                f"Maximum allowed question_count is {max_questions}."
+            )
+        return value
+
+    def validate(self, attrs):
+        attrs["topic"] = attrs["topic"].strip()
+        if not attrs["topic"]:
+            raise serializers.ValidationError({"topic": "Topic cannot be empty."})
+
+        if "question_count" not in attrs:
+            attrs["question_count"] = int(
+                getattr(settings, "PLAYGROUND_DEFAULT_QUESTION_COUNT", 5)
+            )
+        return attrs
+
+
+class PlaygroundSubmitAnswerSerializer(serializers.Serializer):
+    question_id = serializers.UUIDField()
+    selected_option_index = serializers.IntegerField(min_value=0, max_value=3)
+
+
+class PlaygroundSubmitRequestSerializer(serializers.Serializer):
+    answers = PlaygroundSubmitAnswerSerializer(many=True)
+
+    def validate_answers(self, value):
+        if not value:
+            raise serializers.ValidationError("At least one answer is required.")
+
+        seen = set()
+        for row in value:
+            qid = str(row["question_id"])
+            if qid in seen:
+                raise serializers.ValidationError("Duplicate question_id in answers.")
+            seen.add(qid)
+        return value
+
+
+class PlaygroundSessionSerializer(serializers.ModelSerializer):
+    question_count = serializers.IntegerField(source="generated_question_count", read_only=True)
+
+    class Meta:
+        model = PlaygroundSession
+        fields = [
+            "id",
+            "topic",
+            "difficulty",
+            "status",
+            "question_count",
+            "correct_answers",
+            "score_percent",
+            "created_at",
+            "submitted_at",
+        ]
+
+
+class PlaygroundQuestionSerializer(serializers.ModelSerializer):
+    selected_option_index = serializers.SerializerMethodField()
+    is_correct = serializers.SerializerMethodField()
+    correct_option_index = serializers.SerializerMethodField()
+    explanation = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PlaygroundQuestion
+        fields = [
+            "id",
+            "order",
+            "question_text",
+            "options",
+            "selected_option_index",
+            "is_correct",
+            "correct_option_index",
+            "explanation",
+        ]
+
+    def _get_answer(self, obj):
+        answer_map = self.context.get("answer_map", {})
+        return answer_map.get(str(obj.id))
+
+    def get_selected_option_index(self, obj):
+        answer = self._get_answer(obj)
+        if not answer:
+            return None
+        return answer.selected_option_index
+
+    def get_is_correct(self, obj):
+        answer = self._get_answer(obj)
+        if not answer:
+            return None
+        return answer.is_correct
+
+    def get_correct_option_index(self, obj):
+        if not self.context.get("include_solutions", False):
+            return None
+        return obj.correct_option_index
+
+    def get_explanation(self, obj):
+        if not self.context.get("include_solutions", False):
+            return ""
+        return obj.explanation

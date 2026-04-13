@@ -11,9 +11,30 @@
   --line: #dbe3ef;
   --text: #0f172a;
   --muted: #64748b;
+  --ui-text-primary: #1f2a43;
+  --ui-text-secondary: #5a657f;
+  --ui-text-muted: #8a96ad;
+  --ui-surface: #ffffff;
+  --ui-surface-soft: #ecf1ff;
+  --ui-border: #d7deef;
   --marine: #0a3c7d;
   --mint: #0e766e;
   --ember: #9a3412;
+}
+
+html.theme-dark {
+  --page-bg: radial-gradient(circle at 18% 18%, #18263f 0%, #0c1729 48%, #040b18 100%);
+  --panel-bg: rgba(14, 23, 38, 0.76);
+  --panel-strong: rgba(17, 30, 52, 0.84);
+  --line: rgba(86, 105, 138, 0.7);
+  --text: #d7e1f2;
+  --muted: #a3b7db;
+  --ui-text-primary: #e8efff;
+  --ui-text-secondary: #b8c8e4;
+  --ui-text-muted: #93a7cb;
+  --ui-surface: rgba(14, 23, 38, 0.74);
+  --ui-surface-soft: rgba(17, 30, 52, 0.84);
+  --ui-border: rgba(86, 105, 138, 0.74);
 }
 
 * {
@@ -189,48 +210,48 @@ body {
 }
 
 html.theme-dark .auth-page {
-  background: radial-gradient(circle at 18% 14%, #1b2b47 0%, #0d182b 50%, #060f1f 100%) !important;
+  background: radial-gradient(circle at 18% 14%, #1b2b47 0%, #0d182b 50%, #060f1f 100%);
   color: #d9e5fb;
 }
 
 html.theme-dark .auth-page .auth-panel {
-  background: linear-gradient(180deg, rgba(9, 16, 31, 0.92) 0%, rgba(12, 22, 41, 0.96) 100%) !important;
+  background: linear-gradient(180deg, rgba(9, 16, 31, 0.92) 0%, rgba(12, 22, 41, 0.96) 100%);
   color: #d9e5fb;
 }
 
 html.theme-dark .auth-page .auth-frame-card {
-  border-color: rgba(93, 119, 162, 0.55) !important;
-  background: rgba(8, 14, 27, 0.9) !important;
+  border-color: rgba(93, 119, 162, 0.55);
+  background: rgba(8, 14, 27, 0.9);
   box-shadow: 0 24px 48px -28px rgba(2, 6, 23, 0.95);
 }
 
 html.theme-dark .auth-page .auth-input {
-  background: #1a2945 !important;
-  border: 1px solid rgba(96, 120, 162, 0.72) !important;
-  color: #eef4ff !important;
+  background: #1a2945;
+  border: 1px solid rgba(96, 120, 162, 0.72);
+  color: #eef4ff;
 }
 
 html.theme-dark .auth-page .auth-input::placeholder {
-  color: #9ab0d6 !important;
+  color: #9ab0d6;
 }
 
 html.theme-dark .auth-page .auth-input:focus {
-  background: #223553 !important;
-  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.14) !important;
+  background: #223553;
+  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.14);
 }
 
 html.theme-dark .auth-page .auth-tabs {
-  border-color: rgba(90, 114, 154, 0.7) !important;
-  background: #16263f !important;
+  border-color: rgba(90, 114, 154, 0.7);
+  background: #16263f;
 }
 
 html.theme-dark .auth-page .auth-support-card {
-  border-color: rgba(90, 114, 154, 0.55) !important;
-  background: #172942 !important;
+  border-color: rgba(90, 114, 154, 0.55);
+  background: #172942;
 }
 
 html.theme-dark .auth-page nav {
-  background: rgba(8, 14, 27, 0.88) !important;
+  background: rgba(8, 14, 27, 0.88);
   border-bottom: 1px solid rgba(89, 111, 150, 0.35);
 }
 
@@ -239,48 +260,48 @@ html.theme-dark .auth-page [class*='bg-[#eef1fb]'],
 html.theme-dark .auth-page [class*='bg-[#ecf1ff]'],
 html.theme-dark .auth-page [class*='bg-[#e5e9f7]'],
 html.theme-dark .auth-page [class*='bg-[#f8f9fc]'] {
-  background-color: #111d33 !important;
+  background-color: #111d33;
 }
 
 html.theme-dark .auth-page [class*='border-[#d7deef]'],
 html.theme-dark .auth-page [class*='border-[#dbe2f4]'],
 html.theme-dark .auth-page [class*='border-[#a2adc4]'] {
-  border-color: rgba(90, 114, 154, 0.62) !important;
+  border-color: rgba(90, 114, 154, 0.62);
 }
 
 html.theme-dark .auth-page [class*='text-[#242f41]'],
 html.theme-dark .auth-page [class*='text-[#1f2a43]'],
 html.theme-dark .auth-page [class*='text-[#1f2937]'],
 html.theme-dark .auth-page [class*='text-[#1d2a44]'] {
-  color: #e8efff !important;
+  color: #e8efff;
 }
 
 html.theme-dark .auth-page [class*='text-[#515c70]'],
 html.theme-dark .auth-page [class*='text-[#5a657f]'],
 html.theme-dark .auth-page [class*='text-[#6c778c]'],
 html.theme-dark .auth-page [class*='text-[#a2adc4]'] {
-  color: #a3b7db !important;
+  color: #a3b7db;
 }
 
 html.theme-dark .password-checklist {
-  background: rgba(14, 23, 38, 0.76) !important;
-  border-color: rgba(86, 105, 138, 0.7) !important;
+  background: rgba(14, 23, 38, 0.76);
+  border-color: rgba(86, 105, 138, 0.7);
 }
 
 html.theme-dark .password-checklist-title {
-  color: #c6d4ec !important;
+  color: #c6d4ec;
 }
 
 html.theme-dark .password-checklist-list {
-  color: #a3b7db !important;
+  color: #a3b7db;
 }
 
 html.theme-dark .auth-page .portal-entry-secondary {
-  color: #9a6dff !important;
+  color: #9a6dff;
 }
 
 html.theme-dark .auth-page .portal-entry-secondary:hover {
-  color: #8957fb !important;
+  color: #8957fb;
 }
 
 html.theme-dark body {
@@ -289,7 +310,7 @@ html.theme-dark body {
 }
 
 html.theme-dark .app-shell-root {
-  background: radial-gradient(circle at top right, #18263f 0%, #0c1729 58%, #040b18 100%) !important;
+  background: radial-gradient(circle at top right, #18263f 0%, #0c1729 58%, #040b18 100%);
   color: #d7e1f2;
 }
 
@@ -308,34 +329,99 @@ html.theme-dark .chip {
 html.theme-dark input,
 html.theme-dark textarea,
 html.theme-dark select {
-  background-color: rgba(15, 23, 42, 0.92) !important;
-  border-color: rgba(71, 85, 105, 0.9) !important;
-  color: #e2e8f0 !important;
+  background-color: rgba(15, 23, 42, 0.92);
+  border-color: rgba(71, 85, 105, 0.9);
+  color: #e2e8f0;
 }
 
 html.theme-dark input::placeholder,
 html.theme-dark textarea::placeholder {
-  color: #8ea0c2 !important;
+  color: #8ea0c2;
 }
 
 html.theme-dark [class*='bg-white'] {
-  background-color: rgba(14, 23, 38, 0.7) !important;
+  background-color: rgba(14, 23, 38, 0.7);
 }
 
 html.theme-dark [class*='border-slate-200'],
 html.theme-dark [class*='border-slate-300'] {
-  border-color: rgba(86, 105, 138, 0.7) !important;
+  border-color: rgba(86, 105, 138, 0.7);
 }
 
 html.theme-dark [class*='text-slate-900'],
 html.theme-dark [class*='text-slate-800'],
 html.theme-dark [class*='text-slate-700'] {
-  color: #e2e8f0 !important;
+  color: #e2e8f0;
 }
 
 html.theme-dark [class*='text-slate-600'],
 html.theme-dark [class*='text-slate-500'] {
-  color: #a0b2cf !important;
+  color: #a0b2cf;
+}
+
+html.theme-dark .app-shell-root [class*='text-[#242f41]'],
+html.theme-dark .app-shell-root [class*='text-[#1f2a43]'],
+html.theme-dark .app-shell-root [class*='text-[#1f2937]'],
+html.theme-dark .app-shell-root [class*='text-[#1d2a44]'] {
+  color: var(--ui-text-primary);
+}
+
+html.theme-dark .app-shell-root [class*='text-[#515c70]'],
+html.theme-dark .app-shell-root [class*='text-[#5a657f]'],
+html.theme-dark .app-shell-root [class*='text-[#6c778c]'] {
+  color: var(--ui-text-secondary);
+}
+
+html.theme-dark .app-shell-root [class*='text-[#8a96ad]'],
+html.theme-dark .app-shell-root [class*='text-[#a2adc4]'] {
+  color: var(--ui-text-muted);
+}
+
+html.theme-dark .app-shell-root [class*='bg-[#ecf1ff]'],
+html.theme-dark .app-shell-root [class*='bg-[#f8faff]'],
+html.theme-dark .app-shell-root [class*='bg-[#f8f9fc]'],
+html.theme-dark .app-shell-root [class*='bg-[#eef1fb]'] {
+  background-color: var(--ui-surface-soft);
+}
+
+html.theme-dark .app-shell-root [class*='border-[#d7deef]'],
+html.theme-dark .app-shell-root [class*='border-[#dbe2f4]'],
+html.theme-dark .app-shell-root [class*='border-[#a2adc4]'] {
+  border-color: var(--ui-border);
+}
+
+html.theme-dark .playground-generated-question,
+html.theme-dark .playground-generated-option {
+  color: #f5f5f5;
+}
+
+html.theme-dark .playground-option-default {
+  background-color: rgba(14, 23, 38, 0.82);
+  border-color: rgba(86, 105, 138, 0.75);
+  color: #f5f5f5;
+}
+
+html.theme-dark .playground-option-selected {
+  background-color: rgba(67, 56, 202, 0.45);
+  border-color: rgba(129, 140, 248, 0.85);
+  color: #eef2ff;
+}
+
+html.theme-dark .playground-option-correct {
+  background-color: rgba(6, 78, 59, 0.58);
+  border-color: rgba(52, 211, 153, 0.85);
+  color: #d1fae5;
+}
+
+html.theme-dark .playground-option-wrong {
+  background-color: rgba(127, 29, 29, 0.58);
+  border-color: rgba(251, 113, 133, 0.85);
+  color: #ffe4e6;
+}
+
+html.theme-dark .playground-generated-explanation {
+  background-color: rgba(30, 41, 59, 0.8);
+  color: #dbeafe;
 }
 
 html.theme-dark .theme-toggle-btn {
@@ -407,6 +493,6 @@ html.theme-dark .route-loader-overlay {
   .route-loader-ring,
   .loading-hat-icon,
   .loading-skeleton-line {
-    animation: none !important;
+    animation: none;
   }
 }

@@ -1,3 +1,6 @@
+from django.conf import settings
+from django.utils.decorators import method_decorator
+from django_ratelimit.decorators import ratelimit
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -5,6 +8,10 @@ from rest_framework.views import APIView
 from apps.attempts import services
 from apps.attempts.serializers import (
     AvailableExamSerializer,
+    PlaygroundGenerateRequestSerializer,
+    PlaygroundQuestionSerializer,
+    PlaygroundSessionSerializer,
+    PlaygroundSubmitRequestSerializer,
     StudentAnswerSerializer,
     StudentAttemptSerializer,
     StudentProfileSerializer,
@@ -156,3 +163,127 @@ class StudentResultDownloadView(APIView):
         if not fmt:
             return Response({"detail": "format query param is required."}, status=status.HTTP_400_BAD_REQUEST)
         return services.download_result(request.user, result_id, fmt)
+
+
+class PlaygroundGenerateView(APIView):
+    permission_classes = [IsStudent]
+
+    @method_decorator(
+        ratelimit(
+            key="ip",
+            rate=settings.PLAYGROUND_IP_RATE_LIMIT,
+            method="POST",
+            block=True,
+        )
+    )
+    @method_decorator(
+        ratelimit(
+            key="user_or_ip",
+            rate=settings.PLAYGROUND_STUDENT_RATE_LIMIT,
+            method="POST",
+            block=True,
+        )
+    )
+    def post(self, request):
+        serializer = PlaygroundGenerateRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        session = services.generate_playground_session(
+            request.user,
+            topic=serializer.validated_data["topic"],
+            difficulty=serializer.validated_data["difficulty"],
+            question_count=serializer.validated_data["question_count"],
+        )
+        _, questions, answer_map = services.get_playground_questions_with_answers(
+            request.user,
+            session.id,
+        )
+
+        return Response(
+            {
+                "session": PlaygroundSessionSerializer(session).data,
+                "questions": PlaygroundQuestionSerializer(
+                    questions,
+                    many=True,
+                    context={
+                        "answer_map": answer_map,
+                        "include_solutions": False,
+                    },
+                ).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class PlaygroundSessionListView(APIView):
+    permission_classes = [IsStudent]
+
+    def get(self, request):
+        sessions = services.list_playground_sessions(request.user)
+        return Response(PlaygroundSessionSerializer(sessions, many=True).data, status=status.HTTP_200_OK)
+
+
+class PlaygroundSessionDetailView(APIView):
+    permission_classes = [IsStudent]
+
+    def get(self, request, session_id):
+        session, questions, answer_map = services.get_playground_questions_with_answers(
+            request.user,
+            session_id,
+        )
+        include_solutions = session.status == "submitted"
+
+        return Response(
+            {
+                "session": PlaygroundSessionSerializer(session).data,
+                "questions": PlaygroundQuestionSerializer(
+                    questions,
+                    many=True,
+                    context={
+                        "answer_map": answer_map,
+                        "include_solutions": include_solutions,
+                    },
+                ).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class PlaygroundSubmitView(APIView):
+    permission_classes = [IsStudent]
+
+    def post(self, request, session_id):
+        serializer = PlaygroundSubmitRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        session = services.submit_playground_session(
+            request.user,
+            session_id,
+            serializer.validated_data["answers"],
+        )
+        _, questions, answer_map = services.get_playground_questions_with_answers(
+            request.user,
+            session.id,
+        )
+
+        return Response(
+            {
+                "session": PlaygroundSessionSerializer(session).data,
+                "questions": PlaygroundQuestionSerializer(
+                    questions,
+                    many=True,
+                    context={
+                        "answer_map": answer_map,
+                        "include_solutions": True,
+                    },
+                ).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class PlaygroundSummaryView(APIView):
+    permission_classes = [IsStudent]
+
+    def get(self, request):
+        return Response(services.get_playground_summary(request.user), status=status.HTTP_200_OK)
