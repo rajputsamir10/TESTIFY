@@ -1,10 +1,20 @@
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
+import { ImagePlus } from 'lucide-react'
 import { authAPI } from '../../api/authAPI'
 import { examAPI } from '../../api/examAPI'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import ThemeToggleButton from '../../components/ThemeToggleButton'
+import {
+  AccountDetailsCard,
+  ProfileDetailField,
+  ProfileDetailsGrid,
+  ProfilePageHeader,
+  ProfileRoleBadge,
+  ProfileTwoColumnLayout,
+  SecurityCard,
+} from '../../components/profile/ProfileCards'
 import { getErrorMessage } from '../../utils/errors'
 
 function TeacherProfile() {
@@ -18,6 +28,18 @@ function TeacherProfile() {
       new_password: '',
     },
   })
+
+  const newPasswordValue = passwordForm.watch('new_password') || ''
+  const strengthScore = [
+    newPasswordValue.length >= 8,
+    /[A-Z]/.test(newPasswordValue) && /[a-z]/.test(newPasswordValue),
+    /\d/.test(newPasswordValue) || /[^A-Za-z0-9]/.test(newPasswordValue),
+  ].filter(Boolean).length
+  const strengthLabel = ['Weak', 'Medium', 'Strong'][Math.max(0, strengthScore - 1)] || 'Weak'
+
+  const roleLabel = (profile?.role || 'teacher')
+    .replaceAll('_', ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase())
 
   const loadData = async () => {
     setLoading(true)
@@ -69,76 +91,69 @@ function TeacherProfile() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Teacher Profile</h1>
-          <p className="text-sm text-slate-600">Your teaching identity, profile photo, and account security.</p>
-        </div>
-        <ThemeToggleButton className="profile-theme-toggle" />
-      </div>
+      <ProfilePageHeader
+        description="Your teaching identity, profile photo, and account security settings."
+        rightAction={<ThemeToggleButton className="profile-theme-toggle" />}
+      />
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="card p-4">
-          <h2 className="text-lg font-bold text-slate-900">Account details</h2>
-          <div className="mt-3 space-y-2 text-sm text-slate-700">
-            <p><span className="font-semibold">Name:</span> {profile?.full_name}</p>
-            <p><span className="font-semibold">Email:</span> {profile?.email}</p>
-            <p><span className="font-semibold">Teacher ID:</span> {profile?.teacher_id || '-'}</p>
-            <p><span className="font-semibold">Department:</span> {profile?.department_name || '-'}</p>
-          </div>
+      <ProfileTwoColumnLayout>
+        <AccountDetailsCard
+          footer={
+            <div className="mt-8 space-y-3 border-t border-slate-200/70 pt-5">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#8a96ad]">Profile Photo</p>
+                <span className="rounded-full bg-[#ecf1ff] px-3 py-1 text-[10px] font-bold text-[#4a40e0]">Optional</span>
+              </div>
 
-          <div className="mt-4 space-y-2">
-            <p className="text-sm font-semibold text-slate-700">Profile photo</p>
-            {profile?.profile_photo && (
-              <img
-                src={profile.profile_photo}
-                alt="Teacher profile"
-                className="h-24 w-24 rounded-xl border border-slate-200 object-cover"
-              />
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(event) => setPhotoFile(event.target.files?.[0] || null)}
-              className="block w-full text-sm"
-            />
-            <button
-              type="button"
-              onClick={onUploadPhoto}
-              className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white"
-            >
-              Upload photo
-            </button>
-          </div>
-        </div>
+              <div className="flex flex-wrap items-center gap-4">
+                {profile?.profile_photo ? (
+                  <img
+                    src={profile.profile_photo}
+                    alt="Teacher profile"
+                    className="h-20 w-20 rounded-2xl border border-slate-200 object-cover"
+                  />
+                ) : (
+                  <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-slate-400">
+                    <ImagePlus className="h-5 w-5" />
+                  </div>
+                )}
 
-        <div className="card p-4">
-          <h2 className="text-lg font-bold text-slate-900">Change password</h2>
-          <form className="mt-3 space-y-3" onSubmit={passwordForm.handleSubmit(onChangePassword)}>
-            <label className="block text-sm font-semibold text-slate-700">
-              Old password
-              <input
-                type="password"
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                {...passwordForm.register('old_password', { required: true })}
-              />
-            </label>
+                <div className="min-w-[220px] flex-1 space-y-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => setPhotoFile(event.target.files?.[0] || null)}
+                    className="block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={onUploadPhoto}
+                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4a40e0] to-[#7d7bf0] px-4 py-2.5 text-sm font-bold text-white shadow-[0_12px_22px_-14px_rgba(74,64,224,0.9)] transition-all hover:brightness-105"
+                  >
+                    <ImagePlus className="h-4 w-4" />
+                    Upload photo
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        >
+          <ProfileDetailsGrid>
+            <ProfileDetailField label="Full Name" value={profile?.full_name || '-'} prominent />
+            <ProfileDetailField label="Email Address" value={profile?.email || '-'} valueClassName="leading-tight" />
+            <ProfileDetailField label="Role" value={<ProfileRoleBadge label={roleLabel} />} />
+            <ProfileDetailField label="Department" value={profile?.department_name || '-'} />
+            <ProfileDetailField label="Teacher ID" value={profile?.teacher_id || '-'} valueClassName="leading-tight" />
+          </ProfileDetailsGrid>
+        </AccountDetailsCard>
 
-            <label className="block text-sm font-semibold text-slate-700">
-              New password
-              <input
-                type="password"
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                {...passwordForm.register('new_password', { required: true })}
-              />
-            </label>
-
-            <button type="submit" className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white">
-              Update password
-            </button>
-          </form>
-        </div>
-      </div>
+        <SecurityCard
+          form={passwordForm}
+          onSubmit={onChangePassword}
+          strengthScore={strengthScore}
+          strengthLabel={strengthLabel}
+        />
+      </ProfileTwoColumnLayout>
     </div>
   )
 }

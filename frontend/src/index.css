@@ -26,6 +26,31 @@ body {
   background: var(--page-bg);
   color: var(--text);
   font-family: 'Manrope', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+html,
+body {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
 }
 
 h1,
@@ -99,8 +124,7 @@ body {
   animation: hatSpin 1s linear infinite;
 }
 
-.loading-hat-icon,
-.route-loader-hat {
+.loading-hat-icon {
   height: 1.7rem;
   width: 1.7rem;
   color: #4a40e0;
@@ -112,6 +136,31 @@ body {
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.03em;
+}
+
+.loading-skeleton-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: min(72vw, 290px);
+  margin-top: 0.35rem;
+}
+
+.loading-skeleton-line {
+  height: 0.56rem;
+  width: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(201, 211, 232, 0.56) 15%, rgba(145, 160, 191, 0.9) 48%, rgba(201, 211, 232, 0.56) 85%);
+  background-size: 220% 100%;
+  animation: shimmer 1.25s linear infinite;
+}
+
+.loading-skeleton-line-lg {
+  width: 100%;
+}
+
+.loading-skeleton-line-sm {
+  width: 62%;
 }
 
 .route-loader-overlay {
@@ -132,6 +181,10 @@ body {
 .auth-page,
 .auth-panel,
 .auth-input {
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+
+.password-checklist {
   transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
 }
 
@@ -209,6 +262,27 @@ html.theme-dark .auth-page [class*='text-[#a2adc4]'] {
   color: #a3b7db !important;
 }
 
+html.theme-dark .password-checklist {
+  background: rgba(14, 23, 38, 0.76) !important;
+  border-color: rgba(86, 105, 138, 0.7) !important;
+}
+
+html.theme-dark .password-checklist-title {
+  color: #c6d4ec !important;
+}
+
+html.theme-dark .password-checklist-list {
+  color: #a3b7db !important;
+}
+
+html.theme-dark .auth-page .portal-entry-secondary {
+  color: #9a6dff !important;
+}
+
+html.theme-dark .auth-page .portal-entry-secondary:hover {
+  color: #8957fb !important;
+}
+
 html.theme-dark body {
   background: radial-gradient(circle at 18% 18%, #18263f 0%, #0c1729 48%, #040b18 100%);
   color: #d7e1f2;
@@ -276,9 +350,13 @@ html.theme-dark .route-loader-ring {
   border-top-color: #60a5fa;
 }
 
-html.theme-dark .loading-hat-icon,
-html.theme-dark .route-loader-hat {
+html.theme-dark .loading-hat-icon {
   color: #60a5fa;
+}
+
+html.theme-dark .loading-skeleton-line {
+  background: linear-gradient(90deg, rgba(63, 84, 121, 0.45) 15%, rgba(123, 163, 255, 0.8) 48%, rgba(63, 84, 121, 0.45) 85%);
+  background-size: 220% 100%;
 }
 
 html.theme-dark .route-loader-overlay {
@@ -314,12 +392,21 @@ html.theme-dark .route-loader-overlay {
   }
 }
 
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -20% 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .page-content-reveal,
   .loading-hat-ring,
   .route-loader-ring,
   .loading-hat-icon,
-  .route-loader-hat {
+  .loading-skeleton-line {
     animation: none !important;
   }
 }

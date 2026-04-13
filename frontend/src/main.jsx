@@ -18,3 +18,14 @@ createRoot(document.getElementById('root')).render(
     </BrowserRouter>
   </StrictMode>,
 )
+
+const markAppReady = () => {
+  document.documentElement.classList.add('app-ready')
+  window.setTimeout(() => {
+    document.getElementById('boot-loader')?.remove()
+  }, 320)
+}
+
+window.requestAnimationFrame(() => {
+  window.requestAnimationFrame(markAppReady)
+})

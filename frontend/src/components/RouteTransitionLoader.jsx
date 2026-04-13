@@ -1,8 +1,8 @@
-import { GraduationCap } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 
-const TRANSITION_MS = 520
+const TRANSITION_MS = 320
+const SHOW_DELAY_MS = 60
 
 function RouteTransitionLoader() {
   const location = useLocation()
@@ -15,8 +15,8 @@ function RouteTransitionLoader() {
       return
     }
 
-    const showTimer = window.setTimeout(() => setVisible(true), 0)
-    const hideTimer = window.setTimeout(() => setVisible(false), TRANSITION_MS)
+    const showTimer = window.setTimeout(() => setVisible(true), SHOW_DELAY_MS)
+    const hideTimer = window.setTimeout(() => setVisible(false), SHOW_DELAY_MS + TRANSITION_MS)
 
     return () => {
       window.clearTimeout(showTimer)
@@ -32,7 +32,6 @@ function RouteTransitionLoader() {
     <div className="route-loader-overlay" role="status" aria-live="polite" aria-label="Loading page">
       <div className="route-loader-core">
         <span className="route-loader-ring" />
-        <GraduationCap className="route-loader-hat" />
       </div>
       <p className="route-loader-text">Loading workspace</p>
     </div>

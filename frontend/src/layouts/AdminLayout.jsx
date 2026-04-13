@@ -1,4 +1,4 @@
-import { Building, LayoutDashboard, LibraryBig, Users2 } from 'lucide-react'
+import { Building, LayoutDashboard, LibraryBig, Settings, Users2 } from 'lucide-react'
 import AppShell from '../components/AppShell'
 
 const links = [
@@ -9,12 +9,18 @@ const links = [
   { to: '/admin/organization', label: 'Organization', icon: Building },
 ]
 
+const footerLinks = [
+  { to: '/admin/organization', label: 'Settings', icon: Settings },
+]
+
 function AdminLayout() {
   return (
     <AppShell
       roleLabel="admin"
       accentClass="bg-gradient-to-br from-[#4a40e0] to-[#702ae1]"
       links={links}
+      sidebarFooterLinks={footerLinks}
+      showSidebarLogout
     />
   )
 }

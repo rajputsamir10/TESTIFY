@@ -9,6 +9,7 @@ import {
   Badge,
   GraduationCap,
   Headset,
+  Loader2,
   LineChart,
   Lock,
   ShieldCheck,
@@ -154,10 +155,20 @@ function TeacherLogin() {
 
               <button
                 type="submit"
+                disabled={form.formState.isSubmitting}
                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#4a40e0] py-4 font-bold text-[#f4f1ff] shadow-lg shadow-[#4a40e0]/20 transition-all hover:bg-[#3d30d4] hover:shadow-[#4a40e0]/40 active:scale-[0.98]"
               >
-                Login to Teacher Portal
-                <ArrowRight className="h-4 w-4" />
+                {form.formState.isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Logging in...
+                  </>
+                ) : (
+                  <>
+                    Login to Teacher Portal
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
               </button>
             </form>
 
@@ -184,7 +195,7 @@ function TeacherLogin() {
 
           <div className="mt-auto w-full max-w-md pt-16">
             <div className="flex flex-col items-center justify-between gap-4 text-[11px] font-bold uppercase tracking-widest text-[#a2adc4] sm:flex-row">
-              <span>© 2024 Testify Systems</span>
+              <span>© 2026Testify Rajput's Project</span>
               <div className="flex gap-4">
                 <button type="button" className="transition-colors hover:text-[#4a40e0]">Privacy</button>
                 <button type="button" className="transition-colors hover:text-[#4a40e0]">Terms</button>

@@ -4,9 +4,146 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <title>Testify</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: radial-gradient(circle at 16% 16%, #f8fbff 0%, #eef3fb 44%, #e7edf7 100%);
+      }
+
+      #root {
+        display: none;
+      }
+
+      html.app-ready #root {
+        display: block;
+      }
+
+      #boot-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.9rem;
+        background: radial-gradient(circle at 16% 16%, #f8fbff 0%, #eef3fb 44%, #e7edf7 100%);
+        color: #4a40e0;
+      }
+
+      html.app-ready #boot-loader {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 0.25s ease, visibility 0.25s ease;
+      }
+
+      .boot-core {
+        position: relative;
+        display: grid;
+        width: 4.4rem;
+        height: 4.4rem;
+        place-items: center;
+      }
+
+      .boot-ring {
+        position: absolute;
+        inset: 0;
+        border: 2px solid #cdd8f0;
+        border-top-color: #4a40e0;
+        border-radius: 999px;
+        animation: bootSpin 1s linear infinite;
+      }
+
+      .boot-hat {
+        width: 1.9rem;
+        height: 1.9rem;
+        animation: bootBlink 1.2s ease-in-out infinite;
+      }
+
+      .boot-text {
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+        font-size: 0.84rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        color: #4c5f7f;
+      }
+
+      .boot-skeleton {
+        width: min(72vw, 280px);
+        display: flex;
+        flex-direction: column;
+        gap: 0.48rem;
+      }
+
+      .boot-skeleton-line {
+        height: 0.55rem;
+        border-radius: 999px;
+        background: linear-gradient(90deg, rgba(201, 211, 232, 0.56) 15%, rgba(145, 160, 191, 0.9) 48%, rgba(201, 211, 232, 0.56) 85%);
+        background-size: 220% 100%;
+        animation: bootShimmer 1.25s linear infinite;
+      }
+
+      .boot-skeleton-line.small {
+        width: 62%;
+      }
+
+      @keyframes bootSpin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes bootBlink {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.38;
+          transform: scale(0.92);
+        }
+      }
+
+      @keyframes bootShimmer {
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -20% 0;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .boot-ring,
+        .boot-hat,
+        .boot-skeleton-line {
+          animation: none !important;
+        }
+      }
+    </style>
   </head>
   <body>
+    <div id="boot-loader" role="status" aria-live="polite" aria-label="Loading Testify">
+      <div class="boot-core">
+        <span class="boot-ring"></span>
+        <svg class="boot-hat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="m22 10-10-5L2 10l10 5 10-5Z"></path>
+          <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"></path>
+          <path d="M22 10v6"></path>
+        </svg>
+      </div>
+      <p class="boot-text">Loading Testify</p>
+      <div class="boot-skeleton" aria-hidden="true">
+        <span class="boot-skeleton-line"></span>
+        <span class="boot-skeleton-line"></span>
+        <span class="boot-skeleton-line small"></span>
+      </div>
+    </div>
     <div id="root"></div>
     <!-- MediaPipe face detection - loaded from CDN, exposes window.FaceDetection -->
     <script

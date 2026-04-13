@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'react-toastify'
+import { Loader2 } from 'lucide-react'
 import AuthFrame from '../../components/AuthFrame'
 import { authAPI } from '../../api/authAPI'
 import { useAuth } from '../../context/AuthContext'
@@ -53,8 +54,19 @@ function GodLogin() {
           )}
         </label>
 
-        <button type="submit" className="w-full rounded-xl bg-amber-700 px-4 py-2.5 text-sm font-bold text-white">
-          Enter god mode
+        <button
+          type="submit"
+          disabled={form.formState.isSubmitting}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-700 px-4 py-2.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          {form.formState.isSubmitting ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Entering god mode...
+            </>
+          ) : (
+            'Enter god mode'
+          )}
         </button>
       </form>
     </AuthFrame>

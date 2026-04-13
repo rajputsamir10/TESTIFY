@@ -5,9 +5,26 @@ import { useAuth } from '../context/AuthContext'
 import NotificationBell from './NotificationBell'
 import ThemeToggleButton from './ThemeToggleButton'
 
-function AppShell({ roleLabel, accentClass, links }) {
+function AppShell({
+  roleLabel,
+  accentClass,
+  links,
+  brandSubtitle,
+  searchPlaceholder,
+  sidebarFooterLinks = [],
+  showSidebarLogout = false,
+  showHeaderLogout = true,
+}) {
   const { user, logout } = useAuth()
   const [open, setOpen] = useState(false)
+
+  const subtitle = brandSubtitle || `${roleLabel} workspace`
+  const resolvedSearchPlaceholder = searchPlaceholder || 'Search modules, users, or reports...'
+
+  const handleLogout = () => {
+    setOpen(false)
+    logout()
+  }
 
   const displayDate = useMemo(
     () => new Date().toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }),
@@ -44,7 +61,7 @@ function AppShell({ roleLabel, accentClass, links }) {
             </div>
             <div>
               <p className="font-heading text-2xl font-extrabold leading-none tracking-tight text-[#4a40e0]">Testify</p>
-              <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.2em] text-[#515c70]">{roleLabel} workspace</p>
+              <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.2em] text-[#515c70]">{subtitle}</p>
             </div>
           </div>
 
@@ -61,8 +78,8 @@ function AppShell({ roleLabel, accentClass, links }) {
                     [
                       'group flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-[13px] font-semibold transition-all',
                       isActive
-                        ? 'bg-white/95 font-bold text-[#242f41] shadow-[0_10px_20px_-16px_rgba(15,23,42,0.7)]'
-                        : 'text-[#6c778c] hover:bg-white/40 hover:text-[#4a40e0]',
+                        ? 'bg-gradient-to-r from-[#4a40e0] to-[#6a5ef0] font-bold text-white shadow-[0_14px_24px_-18px_rgba(74,64,224,0.9)] hover:shadow-[0_0_0_1px_rgba(74,64,224,0.25),0_18px_30px_-20px_rgba(74,64,224,0.9)]'
+                        : 'text-[#6c778c] hover:bg-white/40 hover:text-[#4a40e0] hover:shadow-[0_0_0_1px_rgba(74,64,224,0.2),0_18px_30px_-20px_rgba(74,64,224,0.8)]',
                     ].join(' ')
                   }
                 >
@@ -72,6 +89,45 @@ function AppShell({ roleLabel, accentClass, links }) {
               )
             })}
           </nav>
+
+          {(sidebarFooterLinks.length > 0 || showSidebarLogout) && (
+            <div className="space-y-1 px-4 pb-3 pt-6">
+              {sidebarFooterLinks.map((item) => {
+                const Icon = item.icon
+
+                return (
+                  <NavLink
+                    key={`${item.to}-${item.label}`}
+                    to={item.to}
+                    end={item.end}
+                    onClick={() => setOpen(false)}
+                    className={({ isActive }) =>
+                      [
+                        'group flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-[13px] font-semibold transition-all',
+                        isActive
+                          ? 'bg-gradient-to-r from-[#4a40e0] to-[#6a5ef0] font-bold text-white shadow-[0_14px_24px_-18px_rgba(74,64,224,0.9)] hover:shadow-[0_0_0_1px_rgba(74,64,224,0.25),0_18px_30px_-20px_rgba(74,64,224,0.9)]'
+                          : 'text-[#6c778c] hover:bg-white/40 hover:text-[#4a40e0] hover:shadow-[0_0_0_1px_rgba(74,64,224,0.2),0_18px_30px_-20px_rgba(74,64,224,0.8)]',
+                      ].join(' ')
+                    }
+                  >
+                    <Icon className="h-4 w-4" />
+                    {item.label}
+                  </NavLink>
+                )
+              })}
+
+              {showSidebarLogout && (
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="flex w-full items-center gap-3 rounded-2xl px-3.5 py-2.5 text-[13px] font-semibold text-[#6c778c] transition-all hover:bg-[#f74b6d]/10 hover:text-[#b41340]"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </button>
+              )}
+            </div>
+          )}
         </aside>
 
         {open && (
@@ -101,7 +157,7 @@ function AppShell({ roleLabel, accentClass, links }) {
               <Search className="mr-3 h-5 w-5 text-[#6c778c]" />
               <input
                 type="text"
-                placeholder="Search modules, users, or reports..."
+                placeholder={resolvedSearchPlaceholder}
                 className="w-full border-none bg-transparent text-sm font-medium text-[#242f41] outline-none placeholder:text-[#6c778c]/80"
               />
             </div>
@@ -136,13 +192,15 @@ function AppShell({ roleLabel, accentClass, links }) {
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={logout}
-                className="hidden items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-[#475569] transition-colors hover:text-[#1e293b] lg:inline-flex"
-              >
-                <LogOut className="h-4 w-4" /> Logout
-              </button>
+              {showHeaderLogout && (
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="hidden items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-[#475569] transition-colors hover:text-[#1e293b] lg:inline-flex"
+                >
+                  <LogOut className="h-4 w-4" /> Logout
+                </button>
+              )}
             </div>
           </header>
 

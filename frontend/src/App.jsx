@@ -36,13 +36,18 @@ import ExamInterface from './pages/student/ExamInterface.jsx'
 import Results from './pages/student/Results.jsx'
 import Profile from './pages/student/Profile.jsx'
 import ThemeToggleButton from './components/ThemeToggleButton.jsx'
-import RouteTransitionLoader from './components/RouteTransitionLoader.jsx'
+import LoadingSpinner from './components/LoadingSpinner.jsx'
+import { useAuth } from './context/AuthContext.jsx'
 
 function App() {
+  const { loading } = useAuth()
+
+  if (loading) {
+    return <LoadingSpinner fullscreen text="Loading Testify" />
+  }
+
   return (
     <>
-      <RouteTransitionLoader />
-
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/login-selection" element={<LoginSelection />} />

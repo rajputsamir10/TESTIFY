@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   ChevronRight,
   Gavel,
+  GraduationCap,
   Layers,
   ShieldCheck,
   Sparkles,
@@ -83,7 +84,10 @@ function Landing() {
     <div className="min-h-screen bg-[#f4f6ff] text-[#242f41]">
       <header className="sticky top-0 z-50 border-b border-[#d9e2f5] bg-white/85 backdrop-blur">
         <nav className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between px-6">
-          <div className="text-2xl font-extrabold tracking-tight text-[#4a40e0]">Testify</div>
+          <div className="flex items-center gap-2 text-2xl font-extrabold tracking-tight text-[#4a40e0]">
+            <GraduationCap className="h-7 w-7" />
+            <span>Testify</span>
+          </div>
           <div className="hidden items-center gap-8 text-sm font-semibold text-slate-600 md:flex">
             <a href="#features" className="transition hover:text-[#4a40e0]">Features</a>
             <a href="#pricing" className="transition hover:text-[#4a40e0]">Pricing</a>

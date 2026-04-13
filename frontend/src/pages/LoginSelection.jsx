@@ -14,17 +14,14 @@ function LoginSelection() {
       <nav className="fixed top-0 z-50 w-full bg-white/90 backdrop-blur-xl shadow-[0_12px_30px_rgba(4,14,31,0.06)]">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
           <div className="flex items-center gap-8">
-            <Link to="/" className="text-3xl font-black tracking-tight text-[#4a40e0]">Testify</Link>
-            <div className="hidden items-center gap-6 text-sm text-slate-600 md:flex">
-              <button type="button" className="transition-colors hover:text-[#4a40e0]">Features</button>
-              <button type="button" className="transition-colors hover:text-[#4a40e0]">Solutions</button>
-              <button type="button" className="transition-colors hover:text-[#4a40e0]">Resources</button>
-              <button type="button" className="transition-colors hover:text-[#4a40e0]">Pricing</button>
-            </div>
+            <Link to="/" className="flex items-center gap-2 text-3xl font-black tracking-tight text-[#4a40e0]">
+              <GraduationCap className="h-8 w-8" />
+              <span>Testify</span>
+            </Link>
           </div>
 
           <div className="flex items-center gap-4">
-            <button type="button" className="border-b-2 border-[#4a40e0] px-2 py-1 text-sm font-bold text-[#4a40e0]">Sign In</button>
+            <a href="#signin-options" className="border-b-2 border-[#4a40e0] px-2 py-1 text-sm font-bold text-[#4a40e0]">Sign In</a>
           </div>
         </div>
       </nav>
@@ -37,7 +34,7 @@ function LoginSelection() {
           </p>
         </header>
 
-        <div className="mb-20 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
+        <div id="signin-options" className="mb-20 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
           <article className="rounded-xl border border-[#dbe2f4] bg-white/70 p-8 text-center backdrop-blur-sm transition-all duration-300 hover:bg-white">
             <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#4a40e0]/10 text-[#4a40e0]">
               <Settings2 className="h-8 w-8" />
@@ -55,7 +52,7 @@ function LoginSelection() {
             </div>
             <h3 className="mb-3 text-2xl font-bold text-[#1f2a43]">Teacher login</h3>
             <p className="mb-8 min-h-[96px] text-[#5a657f]">Create assessments, grade responses, and analyze student performance metrics.</p>
-            <Link to="/teacher-login" className="block w-full rounded-xl bg-[#d6def4] py-3 font-semibold text-[#1f2a43] transition-colors hover:bg-[#c9d3f0]">
+            <Link to="/teacher-login" className="portal-entry-secondary block w-full rounded-xl bg-[#d6def4] py-3 font-semibold text-[#1f2a43] transition-colors hover:bg-[#c9d3f0]">
               Enter portal
             </Link>
           </article>
@@ -66,7 +63,7 @@ function LoginSelection() {
             </div>
             <h3 className="mb-3 text-2xl font-bold text-[#1f2a43]">Student login</h3>
             <p className="mb-8 min-h-[96px] text-[#5a657f]">Take scheduled exams, view results, and access personal learning resources.</p>
-            <Link to="/student-login" className="block w-full rounded-xl bg-[#d6def4] py-3 font-semibold text-[#1f2a43] transition-colors hover:bg-[#c9d3f0]">
+            <Link to="/student-login" className="portal-entry-secondary block w-full rounded-xl bg-[#d6def4] py-3 font-semibold text-[#1f2a43] transition-colors hover:bg-[#c9d3f0]">
               Enter portal
             </Link>
           </article>
@@ -100,7 +97,7 @@ function LoginSelection() {
         </section>
       </main>
 
-      <footer className="mt-auto w-full bg-[#f8f9fc] py-12 text-sm">
+      <footer id="resources" className="mt-auto w-full bg-[#f8f9fc] py-12 text-sm">
         <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-8 px-6 lg:grid-cols-4 lg:px-8">
           <div>
             <span className="mb-4 block text-xl font-black text-[#1f2937]">Testify</span>
@@ -133,7 +130,7 @@ function LoginSelection() {
         </div>
 
         <div className="mx-auto mt-12 max-w-7xl border-t border-slate-200 px-6 pt-8 text-center text-[#6c778c] lg:px-8">
-          <p>© 2024 Testify Assessment Systems. All rights reserved.</p>
+          <p>© 2026 Testify Assessment Systems. All rights reserved</p>
         </div>
       </footer>
     </div>

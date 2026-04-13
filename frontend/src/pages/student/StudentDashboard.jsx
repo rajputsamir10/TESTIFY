@@ -83,7 +83,11 @@ function StudentDashboard() {
       </section>
 
       <section className="grid gap-3.5 md:grid-cols-3">
-        <div className="group relative overflow-hidden rounded-3xl border border-white bg-[linear-gradient(135deg,#ffffff_0%,#f8faff_100%)] p-4 shadow-[0_20px_50px_-12px_rgba(74,64,224,0.08)] transition-all duration-500 hover:-translate-y-1">
+        <Link
+          to="/student/exams"
+          className="group relative block overflow-hidden rounded-3xl border border-white bg-[linear-gradient(135deg,#ffffff_0%,#f8faff_100%)] p-4 shadow-[0_20px_50px_-12px_rgba(74,64,224,0.08)] transition-all duration-500 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#4a40e0]/20"
+          aria-label="Open available exams"
+        >
           <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-[#4a40e0]/5 transition-transform duration-700 group-hover:scale-150" />
           <div className="relative z-10 mb-4 flex items-center justify-between">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-50 text-[#4a40e0] transition-all group-hover:bg-[#4a40e0] group-hover:text-white">
@@ -96,9 +100,13 @@ function StudentDashboard() {
             <p className="font-heading text-4xl font-black text-[#242f41]">{availableExams.length}</p>
             <span className="mb-3 h-2 w-2 rounded-full bg-slate-300" />
           </div>
-        </div>
+        </Link>
 
-        <div className="group relative overflow-hidden rounded-3xl border border-white bg-[linear-gradient(135deg,#ffffff_0%,#f8faff_100%)] p-4 shadow-[0_20px_50px_-12px_rgba(74,64,224,0.08)] transition-all duration-500 hover:-translate-y-1">
+        <Link
+          to="/student/results"
+          className="group relative block overflow-hidden rounded-3xl border border-white bg-[linear-gradient(135deg,#ffffff_0%,#f8faff_100%)] p-4 shadow-[0_20px_50px_-12px_rgba(74,64,224,0.08)] transition-all duration-500 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#4a40e0]/20"
+          aria-label="Open published results"
+        >
           <div className="absolute -right-8 -bottom-8 h-32 w-32 rounded-full bg-[#702ae1]/5 transition-transform duration-700 group-hover:scale-150" />
           <div className="relative z-10 mb-4 flex items-center justify-between">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-purple-50 text-[#702ae1] transition-all group-hover:bg-[#702ae1] group-hover:text-white">
@@ -111,9 +119,13 @@ function StudentDashboard() {
             <p className="font-heading text-4xl font-black text-[#242f41]">{results.length}</p>
             <span className="mb-3 h-2 w-2 rounded-full bg-[#702ae1]" />
           </div>
-        </div>
+        </Link>
 
-        <div className="group relative overflow-hidden rounded-3xl border border-white bg-[linear-gradient(135deg,#ffffff_0%,#f8faff_100%)] p-4 shadow-[0_20px_50px_-12px_rgba(74,64,224,0.08)] transition-all duration-500 hover:-translate-y-1">
+        <Link
+          to="/student/results"
+          className="group relative block overflow-hidden rounded-3xl border border-white bg-[linear-gradient(135deg,#ffffff_0%,#f8faff_100%)] p-4 shadow-[0_20px_50px_-12px_rgba(74,64,224,0.08)] transition-all duration-500 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#4a40e0]/20"
+          aria-label="Open result summary"
+        >
           <div className="relative z-10 mb-4 flex items-center justify-between">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 transition-all group-hover:bg-emerald-500 group-hover:text-white">
               <CheckCircle2 className="h-5 w-5" />
@@ -125,7 +137,7 @@ function StudentDashboard() {
             <p className="font-heading text-4xl font-black text-[#242f41]">{passCount}</p>
             <span className="mb-3 h-2 w-2 rounded-full bg-emerald-500" />
           </div>
-        </div>
+        </Link>
       </section>
 
       <section className="grid grid-cols-1 gap-5 xl:grid-cols-12">
@@ -167,9 +179,12 @@ function StudentDashboard() {
           ) : (
             <div className="space-y-2.5">
               {availableExams.slice(0, 3).map((exam) => (
-                <div
+                <Link
                   key={exam.id}
+                  to={`/student/exams/${exam.id}/instructions`}
+                  state={{ exam }}
                   className="rounded-2xl border border-white/70 bg-white/65 p-3 shadow-sm backdrop-blur transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_30px_-20px_rgba(74,64,224,0.5)]"
+                  aria-label={`Open instructions for ${exam.title}`}
                 >
                   <div className="mb-1.5 flex items-start justify-between gap-3">
                     <p className="font-heading text-sm font-extrabold text-[#242f41] sm:text-base">{exam.title}</p>
@@ -178,7 +193,7 @@ function StudentDashboard() {
                     </span>
                   </div>
                   <p className="line-clamp-2 text-xs font-medium text-[#515c70] sm:text-sm">{exam.description || 'No description provided.'}</p>
-                </div>
+                </Link>
               ))}
 
               <button
@@ -262,7 +277,12 @@ function StudentDashboard() {
           {secondaryResults.length > 0 ? (
             <div className="space-y-2.5">
               {secondaryResults.map((result) => (
-                <div key={result.id} className="flex items-center gap-3 rounded-2xl border border-slate-200/60 bg-white/45 p-3">
+                <Link
+                  key={result.id}
+                  to="/student/results"
+                  className="flex items-center gap-3 rounded-2xl border border-slate-200/60 bg-white/45 p-3 transition-all hover:-translate-y-0.5 hover:shadow-[0_14px_28px_-24px_rgba(74,64,224,0.6)]"
+                  aria-label={`Open results page for ${result.exam_title || 'exam result'}`}
+                >
                   <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#ecf1ff] text-[#4a40e0]">
                     <Trophy className="h-4 w-4" />
                   </div>
@@ -273,16 +293,12 @@ function StudentDashboard() {
                   <span className="rounded-full bg-[#ecf1ff] px-3 py-1 text-xs font-black text-[#4a40e0]">
                     {Number(result.percentage || 0).toFixed(1)}%
                   </span>
-                </div>
+                </Link>
               ))}
             </div>
           ) : (
-            <div className="flex items-center gap-5 rounded-[2rem] border border-slate-200/50 bg-white/40 p-6 opacity-60">
-              <div className="h-14 w-14 animate-pulse rounded-2xl bg-slate-200/70" />
-              <div className="flex-1 space-y-2.5">
-                <div className="h-4 w-1/2 animate-pulse rounded-lg bg-slate-200/60" />
-                <div className="h-3 w-3/4 animate-pulse rounded-lg bg-slate-200/40" />
-              </div>
+            <div className="rounded-[2rem] border border-slate-200/60 bg-white/45 p-6 text-center text-sm font-medium text-[#6c778c]">
+              No more recent results to show right now.
             </div>
           )}
         </div>

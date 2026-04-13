@@ -1,6 +1,6 @@
 import { GraduationCap } from 'lucide-react'
 
-function LoadingSpinner({ fullscreen = false, text = 'Loading' }) {
+function LoadingSpinner({ fullscreen = false, text = 'Loading', showCap = true }) {
   return (
     <div
       className={[
@@ -13,9 +13,16 @@ function LoadingSpinner({ fullscreen = false, text = 'Loading' }) {
     >
       <div className="loading-hat-core">
         <span className="loading-hat-ring" />
-        <GraduationCap className="loading-hat-icon" />
+        {showCap ? <GraduationCap className="loading-hat-icon" /> : null}
       </div>
       <span className="loading-spinner-text">{text}</span>
+      {fullscreen ? (
+        <div className="loading-skeleton-stack" aria-hidden="true">
+          <span className="loading-skeleton-line loading-skeleton-line-lg" />
+          <span className="loading-skeleton-line" />
+          <span className="loading-skeleton-line loading-skeleton-line-sm" />
+        </div>
+      ) : null}
     </div>
   )
 }

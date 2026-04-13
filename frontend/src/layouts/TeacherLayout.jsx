@@ -1,4 +1,4 @@
-import { ClipboardCheck, FilePlus2, LayoutDashboard, Puzzle, UserCircle2 } from 'lucide-react'
+import { ClipboardCheck, FilePlus2, LayoutDashboard, Puzzle, Settings, UserCircle2 } from 'lucide-react'
 import AppShell from '../components/AppShell'
 
 const links = [
@@ -9,12 +9,18 @@ const links = [
   { to: '/teacher/profile', label: 'Profile', icon: UserCircle2 },
 ]
 
+const footerLinks = [
+  { to: '/teacher/profile', label: 'Settings', icon: Settings },
+]
+
 function TeacherLayout() {
   return (
     <AppShell
       roleLabel="teacher"
       accentClass="bg-gradient-to-br from-[#4a40e0] to-[#702ae1]"
       links={links}
+      sidebarFooterLinks={footerLinks}
+      showSidebarLogout
     />
   )
 }
