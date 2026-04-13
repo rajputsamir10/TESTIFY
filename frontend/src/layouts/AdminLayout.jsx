@@ -21,6 +21,7 @@ function AdminLayout() {
       links={links}
       sidebarFooterLinks={footerLinks}
       showSidebarLogout
+      showHeaderLogout={false}
     />
   )
 }

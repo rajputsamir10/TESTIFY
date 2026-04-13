@@ -32,6 +32,25 @@ function formatDate(value) {
   })
 }
 
+function PlaygroundStatCard({ title, value, badge, Icon, orbClass, iconClass, dotClass = 'bg-slate-300' }) {
+  return (
+    <div className="group relative overflow-hidden card rounded-3xl p-4 transition-all duration-500 hover:-translate-y-1">
+      <div className={`absolute -right-8 -top-8 h-32 w-32 rounded-full ${orbClass} transition-transform duration-700 group-hover:scale-150`} />
+      <div className="relative z-10 mb-4 flex items-center justify-between">
+        <div className={`flex h-10 w-10 items-center justify-center rounded-2xl transition-all ${iconClass}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+        <span className="rounded-full bg-slate-100/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-[#6c778c]">{badge}</span>
+      </div>
+      <p className="text-xs font-bold uppercase tracking-widest text-[#515c70]">{title}</p>
+      <div className="mt-1.5 flex items-end gap-2">
+        <p className="font-heading text-4xl font-black text-[#242f41]">{value}</p>
+        <span className={`mb-3 h-2 w-2 rounded-full ${dotClass}`} />
+      </div>
+    </div>
+  )
+}
+
 function Playground() {
   const [loading, setLoading] = useState(true)
   const [topic, setTopic] = useState('')
@@ -244,171 +263,196 @@ function Playground() {
       </div>
 
       <section className="grid gap-3.5 md:grid-cols-4">
-        <div className="card rounded-3xl p-4">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#515c70]">Total Playground Tests</p>
-          <p className="mt-2 font-heading text-4xl font-black text-[#242f41]">{summary.total_tests || 0}</p>
-        </div>
-        <div className="card rounded-3xl p-4">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#515c70]">Submitted Tests</p>
-          <p className="mt-2 font-heading text-4xl font-black text-[#242f41]">{summary.submitted_tests || 0}</p>
-        </div>
-        <div className="card rounded-3xl p-4">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#515c70]">Total Correct</p>
-          <p className="mt-2 font-heading text-4xl font-black text-[#242f41]">{summary.total_correct || 0}</p>
-        </div>
-        <div className="card rounded-3xl p-4">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#515c70]">Average Score</p>
-          <p className="mt-2 font-heading text-4xl font-black text-[#242f41]">{summary.average_score || '0.00'}%</p>
-        </div>
+        <PlaygroundStatCard
+          title="Total Playground Tests"
+          value={summary.total_tests || 0}
+          badge="Sessions"
+          Icon={BrainCircuit}
+          orbClass="bg-[#4a40e0]/5"
+          iconClass="bg-indigo-50 text-[#4a40e0] group-hover:bg-[#4a40e0] group-hover:text-white"
+        />
+        <PlaygroundStatCard
+          title="Submitted Tests"
+          value={summary.submitted_tests || 0}
+          badge="Progress"
+          Icon={CheckCircle2}
+          orbClass="bg-emerald-500/10"
+          iconClass="bg-emerald-50 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white"
+          dotClass="bg-emerald-500"
+        />
+        <PlaygroundStatCard
+          title="Total Correct"
+          value={summary.total_correct || 0}
+          badge="Accuracy"
+          Icon={Trophy}
+          orbClass="bg-amber-500/10"
+          iconClass="bg-amber-50 text-amber-600 group-hover:bg-amber-500 group-hover:text-white"
+          dotClass="bg-amber-500"
+        />
+        <PlaygroundStatCard
+          title="Average Score"
+          value={`${summary.average_score || '0.00'}%`}
+          badge="Performance"
+          Icon={Sparkles}
+          orbClass="bg-[#702ae1]/5"
+          iconClass="bg-purple-50 text-[#702ae1] group-hover:bg-[#702ae1] group-hover:text-white"
+          dotClass="bg-[#702ae1]"
+        />
       </section>
 
       <section className="grid grid-cols-1 gap-5">
         <div className="space-y-5">
-          <div className="card rounded-[1.8rem] p-5">
-            <div className="mb-4 flex items-center gap-2">
-              <BrainCircuit className="h-4.5 w-4.5 text-[#4a40e0]" />
-              <h2 className="font-heading text-xl font-extrabold text-[#242f41]">Generate Practice Test</h2>
+          <div className="group relative overflow-hidden card rounded-[1.8rem] p-5 transition-all duration-500 hover:-translate-y-1">
+            <div className="absolute -right-8 -bottom-10 h-36 w-36 rounded-full bg-[#4a40e0]/5 transition-transform duration-700 group-hover:scale-150" />
+            <div className="relative z-10">
+              <div className="mb-4 flex items-center gap-2">
+                <BrainCircuit className="h-4.5 w-4.5 text-[#4a40e0]" />
+                <h2 className="font-heading text-xl font-extrabold text-[#242f41]">Generate Practice Test</h2>
+              </div>
+
+              <label className="block space-y-2">
+                <span className="text-xs font-bold uppercase tracking-widest text-[#515c70]">Topic</span>
+                <textarea
+                  rows={3}
+                  value={topic}
+                  onChange={(event) => setTopic(event.target.value)}
+                  placeholder="Type a topic, for example: Maddani method"
+                  className="w-full rounded-2xl border border-transparent bg-[#ecf1ff] px-4 py-3 text-sm text-[#242f41] outline-none transition-all focus:bg-white focus:ring-4 focus:ring-[#4a40e0]/10"
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={() => void onGenerate()}
+                disabled={generating}
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4a40e0] to-[#7d7bf0] px-5 py-3 text-sm font-bold text-white shadow-[0_12px_22px_-14px_rgba(74,64,224,0.9)] transition-all hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {generating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    Generate Practice Questions
+                  </>
+                )}
+              </button>
             </div>
-
-            <label className="block space-y-2">
-              <span className="text-xs font-bold uppercase tracking-widest text-[#515c70]">Topic</span>
-              <textarea
-                rows={3}
-                value={topic}
-                onChange={(event) => setTopic(event.target.value)}
-                placeholder="Type a topic, for example: Maddani method"
-                className="w-full rounded-2xl border border-transparent bg-[#ecf1ff] px-4 py-3 text-sm text-[#242f41] outline-none transition-all focus:bg-white focus:ring-4 focus:ring-[#4a40e0]/10"
-              />
-            </label>
-
-            <button
-              type="button"
-              onClick={() => void onGenerate()}
-              disabled={generating}
-              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4a40e0] to-[#7d7bf0] px-5 py-3 text-sm font-bold text-white shadow-[0_12px_22px_-14px_rgba(74,64,224,0.9)] transition-all hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {generating ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" />
-                  Generate Practice Questions
-                </>
-              )}
-            </button>
           </div>
 
-          <div className="card rounded-[1.8rem] p-5">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <h2 className="font-heading text-xl font-extrabold text-[#242f41]">Current Playground Test</h2>
-                <p className="text-xs font-medium text-[#6c778c]">
-                  {activeSession
-                    ? `${activeSession.topic} • ${activeSession.status}`
-                    : 'Generate or open a practice session to begin.'}
-                </p>
+          <div className="group relative overflow-hidden card rounded-[1.8rem] p-5 transition-all duration-500 hover:-translate-y-1">
+            <div className="absolute -left-10 -top-10 h-36 w-36 rounded-full bg-[#702ae1]/5 transition-transform duration-700 group-hover:scale-150" />
+            <div className="relative z-10">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="font-heading text-xl font-extrabold text-[#242f41]">Current Playground Test</h2>
+                  <p className="text-xs font-medium text-[#6c778c]">
+                    {activeSession
+                      ? `${activeSession.topic} • ${activeSession.status}`
+                      : 'Generate or open a practice session to begin.'}
+                  </p>
+                </div>
+
+                {activeSession ? (
+                  <span className="chip">Answered: {answeredCount}/{questions.length}</span>
+                ) : null}
               </div>
 
-              {activeSession ? (
-                <span className="chip">Answered: {answeredCount}/{questions.length}</span>
-              ) : null}
-            </div>
+              {sessionLoading ? (
+                <LoadingSpinner text="Opening playground session" />
+              ) : activeSession ? (
+                <div className="space-y-4">
+                  {questions.map((question) => {
+                    const selectedIndex = answers[question.id]
+                    return (
+                      <article
+                        key={question.id}
+                        className="card rounded-2xl p-4"
+                      >
+                        <p className="text-xs font-black uppercase tracking-[0.16em] text-[#8a96ad]">
+                          Question {question.order}
+                        </p>
+                        <p className="playground-generated-question mt-2 text-sm font-semibold text-[#242f41]">{question.question_text}</p>
 
-            {sessionLoading ? (
-              <LoadingSpinner text="Opening playground session" />
-            ) : activeSession ? (
-              <div className="space-y-4">
-                {questions.map((question) => {
-                  const selectedIndex = answers[question.id]
-                  return (
-                    <article
-                      key={question.id}
-                      className="card rounded-2xl p-4"
-                    >
-                      <p className="text-xs font-black uppercase tracking-[0.16em] text-[#8a96ad]">
-                        Question {question.order}
-                      </p>
-                      <p className="playground-generated-question mt-2 text-sm font-semibold text-[#242f41]">{question.question_text}</p>
+                        <div className="mt-3 space-y-2">
+                          {Array.isArray(question.options) && question.options.map((optionText, index) => {
+                            const isSelected = selectedIndex === index
+                            const showCorrect = isSubmitted && question.correct_option_index === index
+                            const showWrong = isSubmitted && isSelected && !question.is_correct
 
-                      <div className="mt-3 space-y-2">
-                        {Array.isArray(question.options) && question.options.map((optionText, index) => {
-                          const isSelected = selectedIndex === index
-                          const showCorrect = isSubmitted && question.correct_option_index === index
-                          const showWrong = isSubmitted && isSelected && !question.is_correct
-
-                          return (
-                            <button
-                              key={`${question.id}-${index}`}
-                              type="button"
-                              onClick={() => {
-                                if (!isSubmitted) {
-                                  setAnswers((current) => ({ ...current, [question.id]: index }))
-                                }
-                              }}
-                              disabled={isSubmitted}
-                              className={[
-                                'playground-generated-option w-full rounded-xl border px-3 py-2 text-left text-sm transition-all',
-                                showCorrect
-                                  ? 'playground-option-correct border-emerald-400 bg-emerald-50 text-emerald-700'
-                                  : showWrong
-                                    ? 'playground-option-wrong border-rose-400 bg-rose-50 text-rose-700'
-                                    : isSelected
-                                      ? 'playground-option-selected border-[#4a40e0] bg-[#ecf1ff] text-[#242f41]'
-                                      : 'playground-option-default border-slate-200 bg-white text-[#475569] hover:border-[#4a40e0]/40',
-                              ].join(' ')}
-                            >
-                              {optionText}
-                            </button>
-                          )
-                        })}
-                      </div>
-
-                      {isSubmitted ? (
-                        <div className="playground-generated-explanation mt-3 rounded-xl bg-[#f8faff] p-3 text-xs text-[#51607a]">
-                          <p className="playground-generated-question font-bold text-[#242f41]">
-                            {question.is_correct ? 'Correct answer' : 'Incorrect answer'}
-                          </p>
-                          {question.explanation ? <p className="playground-generated-question mt-1">{question.explanation}</p> : null}
+                            return (
+                              <button
+                                key={`${question.id}-${index}`}
+                                type="button"
+                                onClick={() => {
+                                  if (!isSubmitted) {
+                                    setAnswers((current) => ({ ...current, [question.id]: index }))
+                                  }
+                                }}
+                                disabled={isSubmitted}
+                                className={[
+                                  'playground-generated-option w-full rounded-xl border px-3 py-2 text-left text-sm transition-all',
+                                  showCorrect
+                                    ? 'playground-option-correct border-emerald-400 bg-emerald-50 text-emerald-700'
+                                    : showWrong
+                                      ? 'playground-option-wrong border-rose-400 bg-rose-50 text-rose-700'
+                                      : isSelected
+                                        ? 'playground-option-selected border-[#4a40e0] bg-[#ecf1ff] text-[#242f41]'
+                                        : 'playground-option-default border-slate-200 bg-white text-[#475569] hover:border-[#4a40e0]/40',
+                                ].join(' ')}
+                              >
+                                {optionText}
+                              </button>
+                            )
+                          })}
                         </div>
-                      ) : null}
-                    </article>
-                  )
-                })}
 
-                {!isSubmitted ? (
-                  <button
-                    type="button"
-                    onClick={() => void onSubmit()}
-                    disabled={submitting}
-                    className="inline-flex items-center gap-2 rounded-xl bg-[#4a40e0] px-5 py-3 text-sm font-bold text-white transition-all hover:bg-[#3d30d4] disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    {submitting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Submitting...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="h-4 w-4" />
-                        Submit Playground Test
-                      </>
-                    )}
-                  </button>
-                ) : (
-                  <div className="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700">
-                    <Trophy className="h-4 w-4" />
-                    Score: {activeSession.score_percent}% ({activeSession.correct_answers}/{activeSession.question_count})
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="card rounded-2xl p-6 text-center text-sm font-medium text-[#6c778c]">
-                No active playground test. Generate one from the topic box above.
-              </div>
-            )}
+                        {isSubmitted ? (
+                          <div className="playground-generated-explanation mt-3 rounded-xl bg-[#f8faff] p-3 text-xs text-[#51607a]">
+                            <p className="playground-generated-question font-bold text-[#242f41]">
+                              {question.is_correct ? 'Correct answer' : 'Incorrect answer'}
+                            </p>
+                            {question.explanation ? <p className="playground-generated-question mt-1">{question.explanation}</p> : null}
+                          </div>
+                        ) : null}
+                      </article>
+                    )
+                  })}
+
+                  {!isSubmitted ? (
+                    <button
+                      type="button"
+                      onClick={() => void onSubmit()}
+                      disabled={submitting}
+                      className="inline-flex items-center gap-2 rounded-xl bg-[#4a40e0] px-5 py-3 text-sm font-bold text-white transition-all hover:bg-[#3d30d4] disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      {submitting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Submitting...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="h-4 w-4" />
+                          Submit Playground Test
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <div className="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700">
+                      <Trophy className="h-4 w-4" />
+                      Score: {activeSession.score_percent}% ({activeSession.correct_answers}/{activeSession.question_count})
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="card rounded-2xl p-6 text-center text-sm font-medium text-[#6c778c]">
+                  No active playground test. Generate one from the topic box above.
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

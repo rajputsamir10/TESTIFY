@@ -43,10 +43,10 @@ function AppShell({
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,_#f4f6ff_0%,_#ecf1ff_100%)] text-[#242f41] app-shell-root">
-      <div className="lg:grid lg:min-h-screen lg:grid-cols-[15.5rem_1fr]">
+      <div className="lg:min-h-screen">
         <aside
           className={[
-            'fixed inset-y-0 left-0 z-50 flex w-60 flex-col border-r border-[#dde6f7] bg-white/45 py-7 backdrop-blur-2xl transition-transform lg:static lg:w-auto lg:translate-x-0',
+            'fixed inset-y-0 left-0 z-50 flex h-screen w-60 flex-col overflow-y-auto border-r border-[#dde6f7] bg-white/45 py-7 backdrop-blur-2xl transition-transform lg:w-[15.5rem] lg:translate-x-0',
             open ? 'translate-x-0' : '-translate-x-full',
           ].join(' ')}
         >
@@ -65,7 +65,7 @@ function AppShell({
             </div>
           </div>
 
-          <nav className="flex-1 space-y-1.5 px-4">
+          <nav className="space-y-1.5 px-4">
             {links.map((item) => {
               const Icon = item.icon
               return (
@@ -91,7 +91,7 @@ function AppShell({
           </nav>
 
           {(sidebarFooterLinks.length > 0 || showSidebarLogout) && (
-            <div className="space-y-1 px-4 pb-3 pt-6">
+            <div className="mt-auto space-y-1 px-4 pb-3 pt-6">
               {sidebarFooterLinks.map((item) => {
                 const Icon = item.icon
 
@@ -139,7 +139,7 @@ function AppShell({
           />
         )}
 
-        <div className="relative flex min-h-screen flex-col overflow-x-hidden">
+        <div className="relative flex min-h-screen flex-col overflow-x-hidden lg:ml-[15.5rem]">
           <div className="pointer-events-none absolute -right-28 -top-20 hidden h-[28rem] w-[28rem] rounded-full bg-[#4a40e0]/10 blur-[110px] lg:block" />
           <div className="pointer-events-none absolute bottom-10 left-0 hidden h-64 w-64 rounded-full bg-[#702ae1]/10 blur-[95px] lg:block" />
 

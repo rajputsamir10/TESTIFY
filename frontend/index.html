@@ -5,12 +5,38 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Testify</title>
+    <script>
+      ;(() => {
+        const storageKey = 'testify_theme'
+        let theme = 'light'
+
+        try {
+          const savedTheme = window.localStorage.getItem(storageKey)
+          if (savedTheme === 'dark' || savedTheme === 'light') {
+            theme = savedTheme
+          }
+        } catch {
+          theme = 'light'
+        }
+
+        const root = document.documentElement
+        const isDark = theme === 'dark'
+        root.classList.toggle('theme-dark', isDark)
+        root.classList.toggle('theme-light', !isDark)
+        root.style.colorScheme = isDark ? 'dark' : 'light'
+      })()
+    </script>
     <style>
       html,
       body {
         margin: 0;
         min-height: 100%;
         background: radial-gradient(circle at 16% 16%, #f8fbff 0%, #eef3fb 44%, #e7edf7 100%);
+      }
+
+      html.theme-dark,
+      html.theme-dark body {
+        background: radial-gradient(circle at 18% 18%, #18263f 0%, #0c1729 48%, #040b18 100%);
       }
 
       #root {
@@ -32,6 +58,11 @@
         gap: 0.9rem;
         background: radial-gradient(circle at 16% 16%, #f8fbff 0%, #eef3fb 44%, #e7edf7 100%);
         color: #4a40e0;
+      }
+
+      html.theme-dark #boot-loader {
+        background: radial-gradient(circle at 18% 18%, #18263f 0%, #0c1729 48%, #040b18 100%);
+        color: #60a5fa;
       }
 
       html.app-ready #boot-loader {
@@ -58,6 +89,11 @@
         animation: bootSpin 1s linear infinite;
       }
 
+      html.theme-dark .boot-ring {
+        border-color: #3a4a69;
+        border-top-color: #60a5fa;
+      }
+
       .boot-hat {
         width: 1.9rem;
         height: 1.9rem;
@@ -70,6 +106,10 @@
         font-weight: 700;
         letter-spacing: 0.03em;
         color: #4c5f7f;
+      }
+
+      html.theme-dark .boot-text {
+        color: #c6d4ec;
       }
 
       .boot-skeleton {
@@ -85,6 +125,11 @@
         background: linear-gradient(90deg, rgba(201, 211, 232, 0.56) 15%, rgba(145, 160, 191, 0.9) 48%, rgba(201, 211, 232, 0.56) 85%);
         background-size: 220% 100%;
         animation: bootShimmer 1.25s linear infinite;
+      }
+
+      html.theme-dark .boot-skeleton-line {
+        background: linear-gradient(90deg, rgba(63, 84, 121, 0.45) 15%, rgba(123, 163, 255, 0.8) 48%, rgba(63, 84, 121, 0.45) 85%);
+        background-size: 220% 100%;
       }
 
       .boot-skeleton-line.small {
