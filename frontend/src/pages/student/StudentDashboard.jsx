@@ -15,6 +15,7 @@ import { studentAPI } from '../../api/studentAPI'
 import { resultAPI } from '../../api/resultAPI'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import { getErrorMessage } from '../../utils/errors'
+import './StudentDashboard.css'
 
 function formatResultDate(result) {
   const rawDate = result?.published_at || result?.created_at || result?.updated_at
@@ -93,7 +94,7 @@ function StudentDashboard() {
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-50 text-[#4a40e0] transition-all group-hover:bg-[#4a40e0] group-hover:text-white">
               <ClipboardList className="h-5 w-5" />
             </div>
-            <span className="rounded-full bg-slate-100/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-[#6c778c]">Live Status</span>
+            <span className="student-dashboard-badge">Live Status</span>
           </div>
           <p className="text-xs font-bold uppercase tracking-widest text-[#515c70]">Available Exams</p>
           <div className="mt-1.5 flex items-end gap-2">
@@ -112,7 +113,7 @@ function StudentDashboard() {
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-purple-50 text-[#702ae1] transition-all group-hover:bg-[#702ae1] group-hover:text-white">
               <FileText className="h-5 w-5" />
             </div>
-            <span className="rounded-full bg-slate-100/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-[#6c778c]">Academic</span>
+            <span className="student-dashboard-badge">Academic</span>
           </div>
           <p className="text-xs font-bold uppercase tracking-widest text-[#515c70]">Published Results</p>
           <div className="mt-1.5 flex items-end gap-2">
@@ -130,7 +131,7 @@ function StudentDashboard() {
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 transition-all group-hover:bg-emerald-500 group-hover:text-white">
               <CheckCircle2 className="h-5 w-5" />
             </div>
-            <span className="rounded-full bg-slate-100/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-[#6c778c]">Success Rate</span>
+            <span className="student-dashboard-badge">Success Rate</span>
           </div>
           <p className="text-xs font-bold uppercase tracking-widest text-[#515c70]">Pass Count</p>
           <div className="mt-1.5 flex items-end gap-2">

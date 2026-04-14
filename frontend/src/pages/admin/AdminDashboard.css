@@ -1,0 +1,17 @@
+.admin-dashboard-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  background: rgba(241, 245, 249, 0.7);
+  padding: 0.25rem 0.625rem;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #6c778c;
+}
+
+html.theme-dark .admin-dashboard-badge {
+  background: rgba(51, 65, 85, 0.72);
+  color: #e2e8f0;
+}

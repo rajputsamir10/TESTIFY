@@ -12,6 +12,7 @@ import {
 import { studentAPI } from '../../api/studentAPI'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import { getErrorMessage } from '../../utils/errors'
+import './Playground.css'
 
 function formatDate(value) {
   if (!value) {
@@ -40,7 +41,7 @@ function PlaygroundStatCard({ title, value, badge, Icon, orbClass, iconClass, do
         <div className={`flex h-10 w-10 items-center justify-center rounded-2xl transition-all ${iconClass}`}>
           <Icon className="h-5 w-5" />
         </div>
-        <span className="rounded-full bg-slate-100/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-[#6c778c]">{badge}</span>
+        <span className="playground-badge">{badge}</span>
       </div>
       <p className="text-xs font-bold uppercase tracking-widest text-[#515c70]">{title}</p>
       <div className="mt-1.5 flex items-end gap-2">
