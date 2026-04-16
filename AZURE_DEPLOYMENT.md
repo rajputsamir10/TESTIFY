@@ -2,7 +2,7 @@
 
 This project is ready for:
 - Backend: Azure App Service (Linux, Python)
-- Frontend: Azure Static Web Apps (React/Vite)
+- Frontend: Azure App Service (Linux, Node.js, Next.js)
 
 ## 1) Backend (Azure App Service)
 
@@ -35,21 +35,18 @@ Because frontend and backend are on different domains, set:
 
 Without this, login/refresh cookies are often blocked by browsers.
 
-## 2) Frontend (Azure Static Web Apps)
+## 2) Frontend (Azure App Service)
 
-Create an Azure Static Web App connected to this repo.
+Create a second App Service (Linux, Node.js 20+) for the frontend.
 
-Build settings:
+Use these commands in the frontend app service:
 
-- App location: `frontend`
-- Output location: `dist`
-- API location: (empty)
+- Build command: `npm ci && npm run build`
+- Startup command: `npm run start -- -H 0.0.0.0 -p $PORT`
 
-Set frontend API base URL as GitHub repository secret used at build time:
+Set frontend app setting:
 
-- `VITE_API_BASE_URL=https://<your-backend-app>.azurewebsites.net/api`
-
-SPA route fallback is already configured in [frontend/staticwebapp.config.json](frontend/staticwebapp.config.json).
+- `NEXT_PUBLIC_API_BASE_URL=https://<your-backend-app>.azurewebsites.net/api`
 
 ## 3) GitHub secrets for CI/CD
 
@@ -57,13 +54,13 @@ Add these repository secrets:
 
 - `AZURE_BACKEND_APP_NAME`
 - `AZURE_BACKEND_PUBLISH_PROFILE`
-- `AZURE_STATIC_WEB_APPS_API_TOKEN`
-- `VITE_API_BASE_URL`
+- `AZURE_FRONTEND_APP_NAME`
+- `AZURE_FRONTEND_PUBLISH_PROFILE`
+- `NEXT_PUBLIC_API_BASE_URL`
 
 Then use workflows:
 
 - [.github/workflows/azure-backend-appservice.yml](.github/workflows/azure-backend-appservice.yml)
-- [.github/workflows/azure-frontend-staticwebapp.yml](.github/workflows/azure-frontend-staticwebapp.yml)
 
 ## 4) Post-deploy validation
 

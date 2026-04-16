@@ -4,6 +4,7 @@ import { studentAPI } from '../api/studentAPI'
 
 function useWebcamProctoring(attemptId, onAutoSubmit, active = true) {
   const [cameraStatus, setCameraStatus] = useState('loading')
+  const [violationCount, setViolationCount] = useState(0)
 
   const videoRef = useRef(null)
   const streamRef = useRef(null)
@@ -19,7 +20,7 @@ function useWebcamProctoring(attemptId, onAutoSubmit, active = true) {
 
     mountedRef.current = true
 
-    const postViolation = async (showNoFaceToast = true) => {
+    const postViolation = async (source = 'no_face') => {
       if (processingRef.current) return
 
       processingRef.current = true
@@ -27,8 +28,11 @@ function useWebcamProctoring(attemptId, onAutoSubmit, active = true) {
         const { data } = await studentAPI.recordViolation(attemptId)
         if (!mountedRef.current) return
 
+        const nextViolationCount = Number(data?.violation_count || 0)
+        setViolationCount(nextViolationCount)
+
         if (data?.auto_submitted) {
-          toast.error('Exam auto-submitted due to repeated proctoring violations.', {
+          toast.error(`Exam auto-submitted after ${nextViolationCount} proctoring violations.`, {
             autoClose: false,
             closeOnClick: false,
           })
@@ -36,10 +40,15 @@ function useWebcamProctoring(attemptId, onAutoSubmit, active = true) {
           return
         }
 
-        if (showNoFaceToast) {
+        if (source === 'no_face') {
           toast.warning(
-            'No face detected. Please stay in front of your camera.',
+            `No face detected. Please stay in front of your camera. Violations: ${nextViolationCount}/2.`,
             { autoClose: 5000 },
+          )
+        } else if (source === 'camera_denied') {
+          toast.error(
+            `Camera access denied. Violation ${nextViolationCount}/2 recorded.`,
+            { autoClose: false, closeOnClick: false },
           )
         }
       } catch {
@@ -125,7 +134,7 @@ function useWebcamProctoring(attemptId, onAutoSubmit, active = true) {
             // Two consecutive 5-second checks with no face = one violation.
             if (noFaceCountRef.current >= 2) {
               noFaceCountRef.current = 0
-              void postViolation(true)
+              void postViolation('no_face')
             }
             return
           }
@@ -146,11 +155,7 @@ function useWebcamProctoring(attemptId, onAutoSubmit, active = true) {
         if (!mountedRef.current) return
 
         setCameraStatus('denied')
-        toast.error(
-          'Camera access denied. A proctoring violation has been recorded.',
-          { autoClose: false, closeOnClick: false },
-        )
-        void postViolation(false)
+        void postViolation('camera_denied')
       }
     }
 
@@ -194,7 +199,7 @@ function useWebcamProctoring(attemptId, onAutoSubmit, active = true) {
     }
   }, [attemptId, active, onAutoSubmit])
 
-  return { cameraStatus }
+  return { cameraStatus, violationCount }
 }
 
 export default useWebcamProctoring

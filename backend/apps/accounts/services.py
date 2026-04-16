@@ -4,7 +4,8 @@ from datetime import timedelta
 
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.cache import cache
-from django.db import IntegrityError, transaction
+from django.core.mail import send_mail
+from django.db import transaction
 from django.db.models import Count
 from django.utils import timezone
 from rest_framework import status
@@ -30,11 +31,6 @@ ADMIN_SIGNUP_OTP_MINUTES = 10
 class LockedAccountError(APIException):
     status_code = status.HTTP_423_LOCKED
     default_detail = "Account locked. Try again later."
-
-
-class EmailDeliveryError(APIException):
-    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-    default_detail = "Email service is temporarily unavailable. Please try again later."
 
 
 def _generate_tokens(user: CustomUser) -> dict:
@@ -140,10 +136,7 @@ def request_admin_signup_otp(email: str) -> str:
     if not normalized_email:
         raise ValidationError({"email": "Email is required."})
 
-    if CustomUser.objects.filter(
-        email__iexact=normalized_email,
-        role__in=["admin", "god"],
-    ).exists():
+    if CustomUser.objects.filter(email__iexact=normalized_email).exists():
         raise ValidationError({"email": "Email already registered."})
 
     otp = f"{secrets.randbelow(1000000):06d}"
@@ -154,7 +147,7 @@ def request_admin_signup_otp(email: str) -> str:
     )
     cache.delete(_admin_signup_verified_cache_key(normalized_email))
 
-    delivered = send_platform_email(
+    send_platform_email(
         normalized_email,
         "Testify admin signup verification code",
         (
@@ -162,11 +155,6 @@ def request_admin_signup_otp(email: str) -> str:
             f"{otp}. It expires in {ADMIN_SIGNUP_OTP_MINUTES} minutes."
         ),
     )
-    if not delivered:
-        cache.delete(_admin_signup_otp_cache_key(normalized_email))
-        logger.error("Admin signup OTP email delivery failed for %s", normalized_email)
-        raise EmailDeliveryError()
-
     logger.info("Admin signup OTP issued for %s", normalized_email)
     return normalized_email
 
@@ -197,29 +185,26 @@ def admin_signup(data: dict) -> dict:
     if not _is_admin_signup_verified(email):
         raise ValidationError({"detail": "Please verify your email with OTP before signup."})
 
-    if CustomUser.objects.filter(email__iexact=email, role__in=["admin", "god"]).exists():
+    if CustomUser.objects.filter(email__iexact=email).exists():
         raise ValidationError({"email": "Email already registered."})
 
     if Organization.objects.filter(email=data["organization_email"]).exists():
         raise ValidationError({"organization_email": "Organization email already registered."})
 
-    try:
-        with transaction.atomic():
-            org = Organization.objects.create(
-                name=data["organization_name"],
-                email=data["organization_email"],
-                plan="free",
-            )
-            user = CustomUser.objects.create_user(
-                full_name=data["full_name"],
-                email=email,
-                password=data["password"],
-                role="admin",
-                organization=org,
-                is_staff=True,
-            )
-    except IntegrityError as exc:
-        raise ValidationError({"email": "Unable to register this email for the selected organization."}) from exc
+    with transaction.atomic():
+        org = Organization.objects.create(
+            name=data["organization_name"],
+            email=data["organization_email"],
+            plan="free",
+        )
+        user = CustomUser.objects.create_user(
+            full_name=data["full_name"],
+            email=email,
+            password=data["password"],
+            role="admin",
+            organization=org,
+            is_staff=True,
+        )
 
     _clear_admin_signup_verification(email)
     _send_welcome_email(user)
@@ -231,17 +216,16 @@ def admin_signup(data: dict) -> dict:
 def admin_login(email: str, password: str) -> dict:
     normalized_email = _normalized_email(email)
     qs = CustomUser.objects.filter(email__iexact=normalized_email, role="admin")
-    candidates = list(qs.order_by("created_at"))
-    if not candidates:
+    count = qs.count()
+
+    if count == 0:
         logger.info("Admin login failed for %s", normalized_email)
         raise ValidationError({"detail": "Invalid credentials."})
-
-    matched = [candidate for candidate in candidates if candidate.check_password(password)]
-    if len(matched) != 1:
-        logger.info("Admin login failed for %s", normalized_email)
+    if count > 1:
+        logger.warning("Admin login ambiguity for %s", normalized_email)
         raise ValidationError({"detail": "Invalid credentials."})
 
-    user = matched[0]
+    user = qs.first()
     return {"user": user, **_authenticate_user(user, password)}
 
 
@@ -321,50 +305,21 @@ def change_password(user: CustomUser, old_password: str, new_password: str):
     )
 
 
-def _resolve_user_by_email(email: str, role_hint: str = None) -> CustomUser:
-    normalized_email = _normalized_email(email)
-    if not normalized_email:
-        raise ValidationError({"email": "Email is required."})
-
-    qs = CustomUser.objects.filter(email__iexact=normalized_email)
-    if role_hint:
-        qs = qs.filter(role=role_hint)
-
-    users = list(qs.order_by("created_at"))
-    if not users:
-        raise NotFound("No account found with this email.")
-
-    if len(users) == 1:
-        return users[0]
-
-    # Prefer unique privileged accounts when role hint is not supplied.
-    for role in ["admin", "god", "teacher", "student"]:
-        scoped = [candidate for candidate in users if candidate.role == role]
-        if len(scoped) == 1:
-            return scoped[0]
-
-    raise ValidationError(
-        {"email": "Multiple accounts found. Use teacher_id or roll_number for password reset."}
-    )
-
-
-def _resolve_user_for_forgot_password(identifier: str, role_hint: str = None) -> CustomUser:
+def _resolve_user_for_forgot_password(identifier: str) -> CustomUser:
     cleaned = str(identifier).strip()
 
     if not cleaned:
         raise ValidationError({"identifier": "Identifier is required."})
 
     if "@" in cleaned:
-        return _resolve_user_by_email(cleaned, role_hint)
+        try:
+            return CustomUser.objects.get(email__iexact=cleaned)
+        except CustomUser.DoesNotExist as exc:
+            raise NotFound("No account found with this email.") from exc
 
-    if role_hint == "teacher":
-        matches = list(CustomUser.objects.filter(role="teacher", teacher_id=cleaned))
-    elif role_hint == "student":
-        matches = list(CustomUser.objects.filter(role="student", roll_number=cleaned))
-    else:
-        teacher_matches = list(CustomUser.objects.filter(teacher_id=cleaned))
-        roll_matches = list(CustomUser.objects.filter(roll_number=cleaned))
-        matches = teacher_matches + [user for user in roll_matches if user not in teacher_matches]
+    teacher_matches = list(CustomUser.objects.filter(teacher_id=cleaned))
+    roll_matches = list(CustomUser.objects.filter(roll_number=cleaned))
+    matches = teacher_matches + [user for user in roll_matches if user not in teacher_matches]
 
     if not matches:
         raise NotFound("No account found with this identifier.")
@@ -377,8 +332,8 @@ def _resolve_user_for_forgot_password(identifier: str, role_hint: str = None) ->
     return matches[0]
 
 
-def forgot_password(identifier: str, role: str = None):
-    user = _resolve_user_for_forgot_password(identifier, role)
+def forgot_password(identifier: str):
+    user = _resolve_user_for_forgot_password(identifier)
     email = user.email
 
     raw_code = f"{secrets.randbelow(1000000):06d}"
@@ -393,22 +348,22 @@ def forgot_password(identifier: str, role: str = None):
     )
 
     logger.info("OTP requested for %s", email)
-    delivered = send_platform_email(
-        email,
-        "Testify password reset OTP",
-        f"Your OTP is {raw_code}. It expires in {OTP_MINUTES} minutes.",
+    send_mail(
+        subject="Testify password reset OTP",
+        message=f"Your OTP is {raw_code}. It expires in {OTP_MINUTES} minutes.",
+        from_email=None,
+        recipient_list=[email],
+        fail_silently=False,
     )
-    if not delivered:
-        otp.is_used = True
-        otp.save(update_fields=["is_used"])
-        logger.error("Password reset OTP email delivery failed for %s", email)
-        raise EmailDeliveryError()
 
     return email
 
 
-def verify_otp(email: str, submitted_code: str, role: str = None):
-    user = _resolve_user_by_email(email, role)
+def verify_otp(email: str, submitted_code: str):
+    try:
+        user = CustomUser.objects.get(email=email)
+    except CustomUser.DoesNotExist as exc:
+        raise NotFound("No account found with this email.") from exc
 
     otp = OTPCode.objects.filter(user=user, is_used=False).order_by("-created_at").first()
     if not otp:
@@ -435,8 +390,11 @@ def verify_otp(email: str, submitted_code: str, role: str = None):
     cache.set(cache_code_key, submitted_code, timeout=OTP_MINUTES * 60)
 
 
-def reset_password(email: str, submitted_code: str, new_password: str, role: str = None):
-    user = _resolve_user_by_email(email, role)
+def reset_password(email: str, submitted_code: str, new_password: str):
+    try:
+        user = CustomUser.objects.get(email=email)
+    except CustomUser.DoesNotExist as exc:
+        raise NotFound("No account found with this email.") from exc
 
     cache_key = f"otp_verified:{user.id}"
     cache_code_key = f"otp_verified_code:{user.id}"
@@ -489,16 +447,10 @@ def create_org_user(current_user: CustomUser, payload: dict) -> CustomUser:
         raise ValidationError({"organization": "Organization is required."})
 
     role = payload["role"]
-    email = _normalized_email(payload.get("email"))
+    email = payload.get("email")
 
     if not email:
         raise ValidationError({"email": "email is required."})
-
-    if CustomUser.objects.filter(
-        email__iexact=email,
-        role=role,
-    ).exists():
-        raise ValidationError({"email": "This email is already in use for this role."})
 
     if role in ["teacher", "student"] and current_user.role != "god":
         current_count = CustomUser.objects.filter(organization=organization, role=role).count()
@@ -519,22 +471,19 @@ def create_org_user(current_user: CustomUser, payload: dict) -> CustomUser:
         if not course:
             raise ValidationError({"course_id": "Invalid course for organization."})
 
-    try:
-        user = CustomUser.objects.create_user(
-            full_name=payload["full_name"],
-            email=email,
-            password=payload["password"],
-            role=role,
-            organization=organization,
-            department=department,
-            course=course,
-            batch_year=payload.get("batch_year"),
-            roll_number=payload.get("roll_number"),
-            teacher_id=payload.get("teacher_id"),
-            is_staff=role in ["admin", "teacher"],
-        )
-    except IntegrityError as exc:
-        raise ValidationError({"detail": "Unable to create user due to conflicting account details."}) from exc
+    user = CustomUser.objects.create_user(
+        full_name=payload["full_name"],
+        email=email,
+        password=payload["password"],
+        role=role,
+        organization=organization,
+        department=department,
+        course=course,
+        batch_year=payload.get("batch_year"),
+        roll_number=payload.get("roll_number"),
+        teacher_id=payload.get("teacher_id"),
+        is_staff=role in ["admin", "teacher"],
+    )
     _send_welcome_email(user)
     return user
 

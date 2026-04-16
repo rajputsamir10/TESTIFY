@@ -1,3 +1,5 @@
+"use client"
+
 import { MoonStar, SunMedium } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 

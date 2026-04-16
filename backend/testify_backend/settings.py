@@ -38,9 +38,15 @@ environ.Env.read_env(env_file)
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1", "testserver"])
+LOCAL_DEV_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 CSRF_TRUSTED_ORIGINS = env.list(
     "CSRF_TRUSTED_ORIGINS",
-    default=["http://localhost:5173", "http://127.0.0.1:5173"],
+    default=LOCAL_DEV_ORIGINS,
 )
 
 # Application definition
@@ -185,6 +191,8 @@ PLAYGROUND_MAX_QUESTION_COUNT = env("PLAYGROUND_MAX_QUESTION_COUNT")
 PLAYGROUND_GENERATE_TIMEOUT_SECONDS = env("PLAYGROUND_GENERATE_TIMEOUT_SECONDS")
 PLAYGROUND_STUDENT_RATE_LIMIT = env("PLAYGROUND_STUDENT_RATE_LIMIT", default="3/m")
 PLAYGROUND_IP_RATE_LIMIT = env("PLAYGROUND_IP_RATE_LIMIT", default="20/m")
+GOD_MODE_AUTHORIZED_TESTERS = env.list("GOD_MODE_AUTHORIZED_TESTERS", default=[])
+GOD_MODE_DEVELOPER_EMAILS = env.list("GOD_MODE_DEVELOPER_EMAILS", default=[])
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -207,9 +215,17 @@ SIMPLE_JWT = {
 # CORS
 CORS_ALLOWED_ORIGINS = env.list(
     "CORS_ALLOWED_ORIGINS",
-    default=["http://localhost:5173", "http://127.0.0.1:5173"],
+    default=LOCAL_DEV_ORIGINS,
 )
 CORS_ALLOW_CREDENTIALS = True
+
+# Keep local web clients working in development even if .env origins are stale.
+if DEBUG:
+    for origin in LOCAL_DEV_ORIGINS:
+        if origin not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(origin)
+        if origin not in CORS_ALLOWED_ORIGINS:
+            CORS_ALLOWED_ORIGINS.append(origin)
 
 # Email
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"

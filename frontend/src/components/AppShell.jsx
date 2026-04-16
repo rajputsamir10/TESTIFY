@@ -1,6 +1,9 @@
+"use client"
+
 import { BarChart2, CalendarDays, CircleHelp, LogOut, Menu, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useAuth } from '../context/AuthContext'
 import NotificationBell from './NotificationBell'
 import ThemeToggleButton from './ThemeToggleButton'
@@ -14,12 +17,14 @@ function AppShell({
   sidebarFooterLinks = [],
   showSidebarLogout = false,
   showHeaderLogout = true,
+  children,
 }) {
   const { user, logout } = useAuth()
   const [open, setOpen] = useState(false)
 
   const subtitle = brandSubtitle || `${roleLabel} workspace`
   const resolvedSearchPlaceholder = searchPlaceholder || 'Search modules, users, or reports...'
+  const pathname = usePathname()
 
   const handleLogout = () => {
     setOpen(false)
@@ -68,24 +73,22 @@ function AppShell({
           <nav className="space-y-1.5 px-4">
             {links.map((item) => {
               const Icon = item.icon
+              const isActive = item.end ? pathname === item.to : pathname === item.to || pathname.startsWith(`${item.to}/`)
               return (
-                <NavLink
+                <Link
                   key={item.to}
-                  to={item.to}
-                  end={item.end}
+                  href={item.to}
                   onClick={() => setOpen(false)}
-                  className={({ isActive }) =>
-                    [
-                      'group flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-[13px] font-semibold transition-all',
-                      isActive
-                        ? 'bg-gradient-to-r from-[#4a40e0] to-[#6a5ef0] font-bold text-white shadow-[0_14px_24px_-18px_rgba(74,64,224,0.9)] hover:shadow-[0_0_0_1px_rgba(74,64,224,0.25),0_18px_30px_-20px_rgba(74,64,224,0.9)]'
-                        : 'text-[#6c778c] hover:bg-white/40 hover:text-[#4a40e0] hover:shadow-[0_0_0_1px_rgba(74,64,224,0.2),0_18px_30px_-20px_rgba(74,64,224,0.8)]',
-                    ].join(' ')
-                  }
+                  className={[
+                    'group flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-[13px] font-semibold transition-all',
+                    isActive
+                      ? 'bg-gradient-to-r from-[#4a40e0] to-[#6a5ef0] font-bold text-white shadow-[0_14px_24px_-18px_rgba(74,64,224,0.9)] hover:shadow-[0_0_0_1px_rgba(74,64,224,0.25),0_18px_30px_-20px_rgba(74,64,224,0.9)]'
+                      : 'text-[#6c778c] hover:bg-white/40 hover:text-[#4a40e0] hover:shadow-[0_0_0_1px_rgba(74,64,224,0.2),0_18px_30px_-20px_rgba(74,64,224,0.8)]',
+                  ].join(' ')}
                 >
                   <Icon className="h-4 w-4 transition-transform group-hover:scale-110" />
                   <span>{item.label}</span>
-                </NavLink>
+                </Link>
               )
             })}
           </nav>
@@ -94,25 +97,23 @@ function AppShell({
             <div className="mt-auto space-y-1 px-4 pb-3 pt-6">
               {sidebarFooterLinks.map((item) => {
                 const Icon = item.icon
+                const isActive = item.end ? pathname === item.to : pathname === item.to || pathname.startsWith(`${item.to}/`)
 
                 return (
-                  <NavLink
+                  <Link
                     key={`${item.to}-${item.label}`}
-                    to={item.to}
-                    end={item.end}
+                    href={item.to}
                     onClick={() => setOpen(false)}
-                    className={({ isActive }) =>
-                      [
-                        'group flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-[13px] font-semibold transition-all',
-                        isActive
-                          ? 'bg-gradient-to-r from-[#4a40e0] to-[#6a5ef0] font-bold text-white shadow-[0_14px_24px_-18px_rgba(74,64,224,0.9)] hover:shadow-[0_0_0_1px_rgba(74,64,224,0.25),0_18px_30px_-20px_rgba(74,64,224,0.9)]'
-                          : 'text-[#6c778c] hover:bg-white/40 hover:text-[#4a40e0] hover:shadow-[0_0_0_1px_rgba(74,64,224,0.2),0_18px_30px_-20px_rgba(74,64,224,0.8)]',
-                      ].join(' ')
-                    }
+                    className={[
+                      'group flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-[13px] font-semibold transition-all',
+                      isActive
+                        ? 'bg-gradient-to-r from-[#4a40e0] to-[#6a5ef0] font-bold text-white shadow-[0_14px_24px_-18px_rgba(74,64,224,0.9)] hover:shadow-[0_0_0_1px_rgba(74,64,224,0.25),0_18px_30px_-20px_rgba(74,64,224,0.9)]'
+                        : 'text-[#6c778c] hover:bg-white/40 hover:text-[#4a40e0] hover:shadow-[0_0_0_1px_rgba(74,64,224,0.2),0_18px_30px_-20px_rgba(74,64,224,0.8)]',
+                    ].join(' ')}
                   >
                     <Icon className="h-4 w-4" />
                     {item.label}
-                  </NavLink>
+                  </Link>
                 )
               })}
 
@@ -205,7 +206,7 @@ function AppShell({
           </header>
 
           <main className="relative z-10 flex-1 p-4 sm:p-5 lg:p-6 page-content-reveal">
-            <Outlet />
+            {children}
           </main>
         </div>
       </div>

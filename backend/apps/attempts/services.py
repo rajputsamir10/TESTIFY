@@ -2,6 +2,7 @@ import logging
 import hashlib
 import json
 import re
+from difflib import SequenceMatcher
 from datetime import timedelta
 from decimal import Decimal
 from io import BytesIO
@@ -33,6 +34,10 @@ from apps.results.models import Result
 from utils.email_utils import send_platform_email
 
 logger = logging.getLogger(__name__)
+
+PLAYGROUND_QUESTION_TYPES = {"mcq", "subjective", "coding", "dsa"}
+PLAYGROUND_EXECUTABLE_LANGUAGES = {"python", "javascript", "java", "c", "cpp"}
+PLAYGROUND_REQUIRED_TYPES = {"mcq", "subjective", "coding", "dsa"}
 
 
 def _md5_compat(*args, **kwargs):
@@ -676,25 +681,67 @@ def _extract_json_payload(text):
         ) from exc
 
 
-def _normalize_playground_questions(raw_questions, requested_count):
-    if not isinstance(raw_questions, list):
-        raise ValidationError({"detail": "Gemini response must include a questions array."})
+def _clean_playground_test_cases(raw_cases, limit=8):
+    if not isinstance(raw_cases, list):
+        return []
 
-    normalized = []
-    for item in raw_questions:
-        if not isinstance(item, dict):
+    cleaned = []
+    for case in raw_cases:
+        if not isinstance(case, dict):
+            continue
+        expected_output = str(case.get("output", "")).strip()
+        if not expected_output:
             continue
 
-        question_text = str(item.get("question_text", "")).strip()
+        cleaned.append(
+            {
+                "input": str(case.get("input", ""))[:10000],
+                "output": expected_output[:10000],
+            }
+        )
+        if len(cleaned) >= limit:
+            break
+
+    return cleaned
+
+
+def _normalize_single_playground_question(item):
+    if not isinstance(item, dict):
+        return None
+
+    question_type = str(item.get("question_type", "mcq")).strip().lower()
+    if question_type not in PLAYGROUND_QUESTION_TYPES:
+        question_type = "mcq"
+
+    question_text = str(item.get("question_text", "")).strip()
+    explanation = str(item.get("explanation", "")).strip()
+    if not question_text:
+        return None
+
+    base_payload = {
+        "question_type": question_type,
+        "question_text": question_text,
+        "options": [],
+        "correct_option_index": None,
+        "expected_answer": "",
+        "coding_language": "",
+        "problem_statement": "",
+        "input_format": "",
+        "output_format": "",
+        "constraints": "",
+        "sample_test_cases": [],
+        "hidden_test_cases": [],
+        "explanation": explanation,
+    }
+
+    if question_type == "mcq":
         options = item.get("options")
-        explanation = str(item.get("explanation", "")).strip()
-
-        if not question_text or not isinstance(options, list):
-            continue
+        if not isinstance(options, list):
+            return None
 
         cleaned_options = [str(option).strip() for option in options if str(option).strip()]
         if len(cleaned_options) < 4:
-            continue
+            return None
         cleaned_options = cleaned_options[:4]
 
         try:
@@ -705,14 +752,210 @@ def _normalize_playground_questions(raw_questions, requested_count):
         if correct_option_index < 0 or correct_option_index >= len(cleaned_options):
             correct_option_index = 0
 
-        normalized.append(
-            {
-                "question_text": question_text,
-                "options": cleaned_options,
-                "correct_option_index": correct_option_index,
-                "explanation": explanation,
-            }
-        )
+        base_payload["options"] = cleaned_options
+        base_payload["correct_option_index"] = correct_option_index
+        return base_payload
+
+    if question_type == "subjective":
+        expected_answer = str(item.get("expected_answer", "")).strip()
+        if not expected_answer:
+            return None
+
+        base_payload["expected_answer"] = expected_answer
+        return base_payload
+
+    coding_language = str(item.get("coding_language", "python")).strip().lower()
+    if coding_language not in PLAYGROUND_EXECUTABLE_LANGUAGES:
+        coding_language = "python"
+
+    problem_statement = str(item.get("problem_statement") or question_text).strip()
+    input_format = str(item.get("input_format", "")).strip()
+    output_format = str(item.get("output_format", "")).strip()
+    constraints = str(item.get("constraints", "")).strip()
+    sample_test_cases = _clean_playground_test_cases(item.get("sample_test_cases"), limit=8)
+    hidden_test_cases = _clean_playground_test_cases(item.get("hidden_test_cases"), limit=12)
+
+    if not problem_statement or not sample_test_cases:
+        return None
+
+    if question_type == "dsa" and not hidden_test_cases:
+        hidden_test_cases = list(sample_test_cases)
+
+    base_payload.update(
+        {
+            "coding_language": coding_language,
+            "problem_statement": problem_statement,
+            "input_format": input_format,
+            "output_format": output_format,
+            "constraints": constraints,
+            "sample_test_cases": sample_test_cases,
+            "hidden_test_cases": hidden_test_cases if question_type == "dsa" else [],
+        }
+    )
+    return base_payload
+
+
+def _build_fallback_playground_question(question_type, topic):
+    safe_topic = str(topic or "general concepts").strip() or "general concepts"
+
+    if question_type == "mcq":
+        return {
+            "question_type": "mcq",
+            "question_text": f"Which statement best matches the topic \"{safe_topic}\"?",
+            "options": [
+                f"Core principles of {safe_topic} should guide the approach.",
+                "Random guessing usually gives the best outcome.",
+                "The topic is unrelated to learning objectives.",
+                "Skipping fundamentals is always recommended.",
+            ],
+            "correct_option_index": 0,
+            "expected_answer": "",
+            "coding_language": "",
+            "problem_statement": "",
+            "input_format": "",
+            "output_format": "",
+            "constraints": "",
+            "sample_test_cases": [],
+            "hidden_test_cases": [],
+            "explanation": "The correct option emphasizes conceptual understanding.",
+        }
+
+    if question_type == "subjective":
+        return {
+            "question_type": "subjective",
+            "question_text": f"In 4-6 lines, explain the most important idea in \"{safe_topic}\".",
+            "options": [],
+            "correct_option_index": None,
+            "expected_answer": (
+                f"A strong answer should define {safe_topic}, mention one practical use case, "
+                "and explain why the concept matters."
+            ),
+            "coding_language": "",
+            "problem_statement": "",
+            "input_format": "",
+            "output_format": "",
+            "constraints": "",
+            "sample_test_cases": [],
+            "hidden_test_cases": [],
+            "explanation": "Look for concept clarity, relevance, and correct terminology.",
+        }
+
+    if question_type == "coding":
+        return {
+            "question_type": "coding",
+            "question_text": f"Coding task related to {safe_topic}",
+            "options": [],
+            "correct_option_index": None,
+            "expected_answer": "",
+            "coding_language": "python",
+            "problem_statement": (
+                "Read one line of input and print the exact same line. "
+                "This checks stdin/stdout handling."
+            ),
+            "input_format": "A single line string S.",
+            "output_format": "Print S exactly as received.",
+            "constraints": "1 <= len(S) <= 1000",
+            "sample_test_cases": [
+                {"input": "hello", "output": "hello"},
+                {"input": "testify", "output": "testify"},
+            ],
+            "hidden_test_cases": [],
+            "explanation": "Any correct echo solution should pass all sample cases.",
+        }
+
+    return {
+        "question_type": "dsa",
+        "question_text": f"DSA task related to {safe_topic}",
+        "options": [],
+        "correct_option_index": None,
+        "expected_answer": "",
+        "coding_language": "python",
+        "problem_statement": "Given N integers, output their sum.",
+        "input_format": "Line 1: integer N. Line 2: N space-separated integers.",
+        "output_format": "Print one integer: the sum of all N numbers.",
+        "constraints": "1 <= N <= 100000",
+        "sample_test_cases": [
+            {"input": "5\n1 2 3 4 5", "output": "15"},
+            {"input": "3\n10 20 30", "output": "60"},
+        ],
+        "hidden_test_cases": [
+            {"input": "4\n-1 2 -3 4", "output": "2"},
+            {"input": "1\n999", "output": "999"},
+        ],
+        "explanation": "Use linear traversal and accumulate in an integer variable.",
+    }
+
+
+def _ensure_playground_type_coverage(rows, requested_count, topic, selected_question_type="mixed"):
+    normalized_type = str(selected_question_type or "mixed").strip().lower()
+
+    if normalized_type in PLAYGROUND_REQUIRED_TYPES:
+        matching_items = [
+            row
+            for row in list(rows[:requested_count])
+            if row.get("question_type", "mcq") == normalized_type
+        ]
+        while len(matching_items) < requested_count:
+            matching_items.append(_build_fallback_playground_question(normalized_type, topic))
+        return matching_items[:requested_count]
+
+    if requested_count < len(PLAYGROUND_REQUIRED_TYPES):
+        items = list(rows[:requested_count])
+        while len(items) < requested_count:
+            items.append(_build_fallback_playground_question("mcq", topic))
+        return items
+
+    items = list(rows[:requested_count])
+    type_counts = {}
+    for row in items:
+        row_type = row.get("question_type", "mcq")
+        type_counts[row_type] = type_counts.get(row_type, 0) + 1
+
+    existing_types = set(type_counts.keys())
+    missing_types = [t for t in sorted(PLAYGROUND_REQUIRED_TYPES) if t not in existing_types]
+    if not missing_types:
+        return items
+
+    for missing_type in missing_types:
+        fallback = _build_fallback_playground_question(missing_type, topic)
+
+        replacement_index = None
+        for idx in range(len(items) - 1, -1, -1):
+            row_type = items[idx].get("question_type", "mcq")
+            if type_counts.get(row_type, 0) > 1:
+                replacement_index = idx
+                type_counts[row_type] -= 1
+                break
+
+        if replacement_index is None:
+            if len(items) < requested_count:
+                items.append(fallback)
+                type_counts[missing_type] = type_counts.get(missing_type, 0) + 1
+                continue
+            replacement_index = len(items) - 1
+            replaced_type = items[replacement_index].get("question_type", "mcq")
+            type_counts[replaced_type] = max(0, type_counts.get(replaced_type, 0) - 1)
+
+        items[replacement_index] = fallback
+        type_counts[missing_type] = type_counts.get(missing_type, 0) + 1
+
+    preferred_cycle = ["mcq", "subjective", "coding", "dsa"]
+    while len(items) < requested_count:
+        next_type = preferred_cycle[len(items) % len(preferred_cycle)]
+        items.append(_build_fallback_playground_question(next_type, topic))
+
+    return items[:requested_count]
+
+
+def _normalize_playground_questions(raw_questions, requested_count):
+    if not isinstance(raw_questions, list):
+        raise ValidationError({"detail": "Gemini response must include a questions array."})
+
+    normalized = []
+    for item in raw_questions:
+        normalized_question = _normalize_single_playground_question(item)
+        if normalized_question:
+            normalized.append(normalized_question)
 
         if len(normalized) >= requested_count:
             break
@@ -730,7 +973,7 @@ def _normalize_playground_questions(raw_questions, requested_count):
     return normalized
 
 
-def _generate_questions_with_gemini(user, topic, difficulty, question_count):
+def _generate_questions_with_gemini(user, topic, difficulty, question_count, question_type="mixed"):
     api_key = getattr(settings, "GEMINI_API_KEY", "").strip()
     if not api_key:
         raise ValidationError(
@@ -748,12 +991,34 @@ def _generate_questions_with_gemini(user, topic, difficulty, question_count):
     ).rstrip("/")
     timeout_seconds = int(getattr(settings, "PLAYGROUND_GENERATE_TIMEOUT_SECONDS", 25))
 
+    normalized_type = str(question_type or "mixed").strip().lower()
+    force_single_type = normalized_type in PLAYGROUND_REQUIRED_TYPES
+
+    type_instruction = (
+        (
+            f"Generate {question_count} questions and every question MUST use question_type '{normalized_type}'. "
+            "Do not include any other question type. "
+        )
+        if force_single_type
+        else (
+            f"Generate {question_count} questions. "
+            "If question_count >= 4, include at least one question of each type. "
+        )
+    )
+
     prompt = (
-        "You are generating practice multiple-choice questions for a student exam playground. "
-        "Return ONLY valid JSON with this exact structure: "
-        '{"questions":[{"question_text":"...","options":["A","B","C","D"],'
-        '"correct_option_index":0,"explanation":"..."}]}. '
-        f"Generate {question_count} questions. "
+        "You are generating practice questions for a student exam playground. "
+        "Return ONLY valid JSON with this exact top-level structure: "
+        '{"questions":[...]}.'
+        " Each question MUST include question_type and question_text. "
+        "Allowed question_type values: mcq, subjective, coding, dsa. "
+        "Field rules by type: "
+        "1) mcq => options (exactly 4 strings), correct_option_index (0-3), optional explanation. "
+        "2) subjective => expected_answer (model/reference answer), optional explanation. "
+        "3) coding => coding_language (python/javascript/java/c/cpp), problem_statement, input_format, output_format, constraints, sample_test_cases as array of {input,output}, optional explanation. "
+        "4) dsa => same as coding plus hidden_test_cases as array of {input,output}. "
+        "Do not include markdown. Do not include extra keys outside this schema. "
+        f"{type_instruction}"
         f"Topic: {topic}. "
         f"Difficulty: {difficulty}. "
         f"Student department: {user.department.name}. "
@@ -861,8 +1126,12 @@ def _generate_questions_with_gemini(user, topic, difficulty, question_count):
     )
 
 
-def generate_playground_session(user, topic, difficulty, question_count):
+def generate_playground_session(user, topic, difficulty, question_count, question_type="mixed"):
     _require_playground_enrollment(user)
+
+    normalized_type = str(question_type or "mixed").strip().lower()
+    if normalized_type not in PLAYGROUND_REQUIRED_TYPES and normalized_type != "mixed":
+        normalized_type = "mixed"
 
     max_questions = int(getattr(settings, "PLAYGROUND_MAX_QUESTION_COUNT", 10))
     if question_count > max_questions:
@@ -873,6 +1142,13 @@ def generate_playground_session(user, topic, difficulty, question_count):
         topic=topic,
         difficulty=difficulty,
         question_count=question_count,
+        question_type=normalized_type,
+    )
+    generated_questions = _ensure_playground_type_coverage(
+        generated_questions,
+        question_count,
+        topic,
+        selected_question_type=normalized_type,
     )
 
     with transaction.atomic():
@@ -893,9 +1169,18 @@ def generate_playground_session(user, topic, difficulty, question_count):
                 PlaygroundQuestion(
                     session=session,
                     organization_id=user.organization_id,
+                    question_type=row["question_type"],
                     question_text=row["question_text"],
                     options=row["options"],
                     correct_option_index=row["correct_option_index"],
+                    expected_answer=row["expected_answer"],
+                    coding_language=row["coding_language"],
+                    problem_statement=row["problem_statement"],
+                    input_format=row["input_format"],
+                    output_format=row["output_format"],
+                    constraints=row["constraints"],
+                    sample_test_cases=row["sample_test_cases"],
+                    hidden_test_cases=row["hidden_test_cases"],
                     explanation=row["explanation"],
                     order=index,
                 )
@@ -947,13 +1232,103 @@ def get_playground_questions_with_answers(user, session_id):
     return session, questions, answer_map
 
 
+def _serialize_validation_detail(value):
+    if isinstance(value, dict):
+        return {
+            str(key): _serialize_validation_detail(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [_serialize_validation_detail(item) for item in value]
+    return str(value)
+
+
+def _normalize_compare_text(value):
+    return " ".join(str(value or "").strip().lower().split())
+
+
+def _is_subjective_answer_correct(submitted_answer, expected_answer):
+    submitted = _normalize_compare_text(submitted_answer)
+    expected = _normalize_compare_text(expected_answer)
+
+    if not submitted or not expected:
+        return False
+
+    if submitted == expected:
+        return True
+
+    if len(submitted) >= 15 and submitted in expected:
+        return True
+
+    if len(expected) >= 15 and expected in submitted:
+        return True
+
+    return SequenceMatcher(None, submitted, expected).ratio() >= 0.72
+
+
+def _evaluate_playground_code_answer(question, code_answer):
+    source_code = str(code_answer or "")
+    if not source_code.strip():
+        return False, {"detail": "Code answer is required for this question."}
+
+    language = str(question.coding_language or "python").strip().lower()
+    if language not in PLAYGROUND_EXECUTABLE_LANGUAGES:
+        return False, {
+            "detail": (
+                f'Language "{question.coding_language or language}" '
+                "is not supported in playground execution."
+            )
+        }
+
+    test_cases = (
+        question.hidden_test_cases
+        if question.question_type == "dsa"
+        else question.sample_test_cases
+    )
+
+    try:
+        result = execute_code(
+            language=language,
+            source=source_code,
+            test_cases=test_cases,
+            timeout=3,
+            memory_limit_mb=256,
+        )
+    except ValidationError as exc:
+        return False, {"detail": _serialize_validation_detail(exc.detail)}
+    except Exception:
+        logger.exception(
+            "Playground code evaluation failed unexpectedly for question_id=%s",
+            question.id,
+        )
+        return False, {"detail": "Code evaluation failed unexpectedly."}
+
+    passed_count = int(result.get("passed_count") or 0)
+    total_cases = int(result.get("total_cases") or 0)
+    is_correct = total_cases > 0 and passed_count == total_cases
+
+    execution_result = {
+        "language": result.get("language", language),
+        "passed_count": passed_count,
+        "total_cases": total_cases,
+        "ratio": str(result.get("ratio", "0")),
+    }
+
+    if question.question_type == "dsa":
+        execution_result["detail"] = "Evaluated using hidden test cases."
+    else:
+        execution_result["case_results"] = result.get("case_results", [])
+
+    return is_correct, execution_result
+
+
 def submit_playground_session(user, session_id, answers_payload):
     session = get_playground_session(user, session_id)
     if session.status == "submitted":
         return session
 
     answers_by_question = {
-        str(row["question_id"]): int(row["selected_option_index"])
+        str(row["question_id"]): row
         for row in answers_payload
     }
 
@@ -966,17 +1341,82 @@ def submit_playground_session(user, session_id, answers_payload):
         if question_id not in answer_map:
             raise ValidationError({"answers": "One or more question_id values are invalid."})
 
+    missing_code_questions = []
+    for question_id, answer in answer_map.items():
+        question_type = answer.question.question_type
+        if question_type not in ("coding", "dsa"):
+            continue
+
+        payload = answers_by_question.get(question_id, {})
+        code_answer = str(payload.get("code_answer", "")).strip()
+        if not code_answer:
+            missing_code_questions.append(answer.question.order)
+
+    if missing_code_questions:
+        order_text = ", ".join(str(order) for order in sorted(missing_code_questions))
+        raise ValidationError(
+            {
+                "answers": (
+                    "Code answer is required for all Coding/DSA questions before submission. "
+                    f"Missing question numbers: {order_text}."
+                )
+            }
+        )
+
     with transaction.atomic():
+        now = timezone.now()
+
         for question_id, answer in answer_map.items():
-            selected = answers_by_question.get(question_id)
-            answer.selected_option_index = selected
-            answer.is_correct = (
-                selected is not None and selected == answer.question.correct_option_index
-            )
+            payload = answers_by_question.get(question_id, {})
+
+            answer.selected_option_index = None
+            answer.text_answer = ""
+            answer.code_answer = ""
+            answer.execution_result = {}
+            answer.is_correct = False
+
+            question_type = answer.question.question_type
+
+            if question_type == "mcq":
+                selected = payload.get("selected_option_index")
+                if selected is not None:
+                    selected = int(selected)
+
+                option_count = len(answer.question.options or [])
+                if selected is not None and option_count > 0 and 0 <= selected < option_count:
+                    answer.selected_option_index = selected
+                    answer.is_correct = selected == answer.question.correct_option_index
+
+            elif question_type == "subjective":
+                text_answer = str(payload.get("text_answer", "")).strip()
+                answer.text_answer = text_answer
+                answer.is_correct = _is_subjective_answer_correct(
+                    text_answer,
+                    answer.question.expected_answer,
+                )
+
+            else:
+                code_answer = str(payload.get("code_answer", ""))
+                answer.code_answer = code_answer
+                is_correct, execution_result = _evaluate_playground_code_answer(
+                    answer.question,
+                    code_answer,
+                )
+                answer.is_correct = is_correct
+                answer.execution_result = execution_result
+
+            answer.updated_at = now
 
         PlaygroundAnswer.objects.bulk_update(
             answer_map.values(),
-            ["selected_option_index", "is_correct", "updated_at"],
+            [
+                "selected_option_index",
+                "text_answer",
+                "code_answer",
+                "execution_result",
+                "is_correct",
+                "updated_at",
+            ],
         )
 
         total_questions = len(answer_map)

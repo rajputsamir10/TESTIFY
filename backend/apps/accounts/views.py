@@ -202,7 +202,6 @@ class LogoutView(APIView):
 
     def post(self, request):
         refresh = request.data.get("refresh") or request.COOKIES.get(settings.AUTH_COOKIE_REFRESH_NAME)
-
         if refresh:
             try:
                 services.logout_user(refresh)
@@ -231,10 +230,7 @@ class ForgotPasswordView(APIView):
     def post(self, request):
         serializer = ForgotPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        email = services.forgot_password(
-            serializer.validated_data["identifier"],
-            serializer.validated_data.get("role"),
-        )
+        email = services.forgot_password(serializer.validated_data["identifier"])
         return Response(
             {"detail": "OTP sent to email.", "email": email},
             status=status.HTTP_200_OK,
@@ -248,11 +244,7 @@ class VerifyOTPView(APIView):
     def post(self, request):
         serializer = VerifyOTPSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        services.verify_otp(
-            serializer.validated_data["email"],
-            serializer.validated_data["otp"],
-            serializer.validated_data.get("role"),
-        )
+        services.verify_otp(serializer.validated_data["email"], serializer.validated_data["otp"])
         return Response({"detail": "OTP verified successfully."}, status=status.HTTP_200_OK)
 
 
@@ -266,7 +258,6 @@ class ResetPasswordView(APIView):
             serializer.validated_data["email"],
             serializer.validated_data["otp"],
             serializer.validated_data["new_password"],
-            serializer.validated_data.get("role"),
         )
         return Response({"detail": "Password reset successful."}, status=status.HTTP_200_OK)
 
@@ -316,7 +307,6 @@ class AdminUserResetPasswordView(APIView):
 
 class CustomTokenRefreshView(TokenRefreshView):
     permission_classes = [AllowAny]
-
     serializer_class = TokenRefreshSerializer
 
     def post(self, request, *args, **kwargs):

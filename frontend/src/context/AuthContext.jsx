@@ -1,5 +1,6 @@
-/* eslint-disable react-refresh/only-export-components */
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+"use client"
+
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { jwtDecode } from 'jwt-decode'
 import { authAPI } from '../api/authAPI'
 
@@ -43,14 +44,16 @@ function parseUserFromToken(token) {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const authVersionRef = useRef(0)
 
   useEffect(() => {
     let active = true
+    const bootstrapVersion = authVersionRef.current
 
     const bootstrapSession = async () => {
       try {
         const { data } = await authAPI.me()
-        if (!active) {
+        if (!active || bootstrapVersion !== authVersionRef.current) {
           return
         }
 
@@ -60,11 +63,11 @@ export function AuthProvider({ children }) {
           localStorage.setItem('role', normalized.role)
         }
       } catch {
-        if (active) {
+        if (active && bootstrapVersion === authVersionRef.current) {
           setUser(null)
         }
       } finally {
-        if (active) {
+        if (active && bootstrapVersion === authVersionRef.current) {
           setLoading(false)
         }
       }
@@ -78,6 +81,9 @@ export function AuthProvider({ children }) {
   }, [])
 
   const login = useCallback((accessTokenOrUser, _refreshToken, userPayload) => {
+    authVersionRef.current += 1
+    setLoading(false)
+
     let resolvedUser = null
 
     if (accessTokenOrUser && typeof accessTokenOrUser === 'object') {
@@ -96,9 +102,14 @@ export function AuthProvider({ children }) {
       return
     }
 
+    const loginVersion = authVersionRef.current
+
     authAPI
       .me()
       .then(({ data }) => {
+        if (loginVersion !== authVersionRef.current) {
+          return
+        }
         const normalized = normalizeUser(data)
         setUser(normalized)
         if (normalized?.role) {
@@ -106,11 +117,15 @@ export function AuthProvider({ children }) {
         }
       })
       .catch(() => {
-        setUser(null)
+        if (loginVersion === authVersionRef.current) {
+          setUser(null)
+        }
       })
   }, [])
 
   const logout = useCallback(async () => {
+    authVersionRef.current += 1
+
     try {
       await authAPI.logout()
     } catch {
@@ -119,6 +134,7 @@ export function AuthProvider({ children }) {
 
     const role = user?.role || localStorage.getItem('role') || 'admin'
     localStorage.removeItem('role')
+    setLoading(false)
     setUser(null)
     window.location.href = `/login/${role}`
   }, [user])

@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 def send_platform_email(recipient_email: str, subject: str, message: str):
     """Best-effort email sender that never interrupts critical product flows."""
     if not recipient_email:
-        return False
+        return
 
     text_body = str(message or "").strip()
     message_lines = [line.strip() for line in text_body.splitlines() if line.strip()]
@@ -33,7 +33,6 @@ def send_platform_email(recipient_email: str, subject: str, message: str):
         )
         email.attach_alternative(html_body, "text/html")
         email.send(fail_silently=False)
-        return True
     except Exception as exc:
         logger.warning("HTML email dispatch failed to %s: %s", recipient_email, exc)
         try:
@@ -44,7 +43,5 @@ def send_platform_email(recipient_email: str, subject: str, message: str):
                 recipient_list=[recipient_email],
                 fail_silently=False,
             )
-            return True
         except Exception as fallback_exc:
             logger.warning("Fallback email dispatch failed to %s: %s", recipient_email, fallback_exc)
-            return False

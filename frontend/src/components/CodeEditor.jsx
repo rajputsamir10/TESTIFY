@@ -1,4 +1,4 @@
-import Editor from 'react-simple-code-editor'
+import EditorModule from 'react-simple-code-editor'
 import Prism from 'prismjs'
 import 'prismjs/components/prism-clike'
 import 'prismjs/components/prism-javascript'
@@ -18,9 +18,27 @@ const PRISM_LANGUAGE_MAP = {
   html: 'markup',
 }
 
+const Editor = EditorModule?.default || EditorModule
+
 function CodeEditor({ value, onChange, language = 'python', readOnly = false, minHeight = 220 }) {
   const code = value || ''
   const prismLanguage = PRISM_LANGUAGE_MAP[language] || 'plain'
+
+  if (typeof Editor !== 'function') {
+    return (
+      <textarea
+        value={code}
+        readOnly={readOnly}
+        onChange={(event) => {
+          if (!readOnly) {
+            onChange?.(event.target.value)
+          }
+        }}
+        className="w-full rounded-xl border border-slate-200 bg-slate-950 p-3 font-mono text-sm text-slate-100 focus:outline-none"
+        style={{ minHeight }}
+      />
+    )
+  }
 
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-950 text-sm text-slate-100">

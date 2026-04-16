@@ -1,3 +1,5 @@
+"use client"
+
 import { BarChart2, BookOpenCheck, LayoutDashboard, Puzzle, Settings, UserCircle2 } from 'lucide-react'
 import AppShell from '../components/AppShell'
 
@@ -13,7 +15,7 @@ const footerLinks = [
   { to: '/student/profile', label: 'Settings', icon: Settings },
 ]
 
-function StudentLayout() {
+function StudentLayout({ children }) {
   return (
     <AppShell
       roleLabel="student"
@@ -24,7 +26,9 @@ function StudentLayout() {
       sidebarFooterLinks={footerLinks}
       showSidebarLogout
       showHeaderLogout={false}
-    />
+    >
+      {children}
+    </AppShell>
   )
 }
 

@@ -1,3 +1,5 @@
+"use client"
+
 import { Building, LayoutDashboard, LibraryBig, Settings, Users2 } from 'lucide-react'
 import AppShell from '../components/AppShell'
 
@@ -13,7 +15,7 @@ const footerLinks = [
   { to: '/admin/organization', label: 'Settings', icon: Settings },
 ]
 
-function AdminLayout() {
+function AdminLayout({ children }) {
   return (
     <AppShell
       roleLabel="admin"
@@ -22,7 +24,9 @@ function AdminLayout() {
       sidebarFooterLinks={footerLinks}
       showSidebarLogout
       showHeaderLogout={false}
-    />
+    >
+      {children}
+    </AppShell>
   )
 }
 

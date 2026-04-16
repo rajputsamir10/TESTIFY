@@ -112,6 +112,20 @@ class PlaygroundSession(models.Model):
 
 
 class PlaygroundQuestion(models.Model):
+    QUESTION_TYPE_CHOICES = [
+        ("mcq", "MCQ"),
+        ("subjective", "Subjective"),
+        ("coding", "Coding"),
+        ("dsa", "DSA Problem"),
+    ]
+    CODING_LANGUAGE_CHOICES = [
+        ("python", "Python"),
+        ("javascript", "JavaScript"),
+        ("java", "Java"),
+        ("c", "C"),
+        ("cpp", "C++"),
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     session = models.ForeignKey(
         PlaygroundSession,
@@ -119,9 +133,23 @@ class PlaygroundQuestion(models.Model):
         related_name="questions",
     )
     organization = models.ForeignKey("organizations.Organization", on_delete=models.CASCADE)
+    question_type = models.CharField(max_length=20, choices=QUESTION_TYPE_CHOICES, default="mcq")
     question_text = models.TextField()
     options = models.JSONField(default=list)
-    correct_option_index = models.PositiveSmallIntegerField(default=0)
+    correct_option_index = models.PositiveSmallIntegerField(null=True, blank=True)
+    expected_answer = models.TextField(blank=True, default="")
+    coding_language = models.CharField(
+        max_length=20,
+        choices=CODING_LANGUAGE_CHOICES,
+        blank=True,
+        default="",
+    )
+    problem_statement = models.TextField(blank=True, default="")
+    input_format = models.TextField(blank=True, default="")
+    output_format = models.TextField(blank=True, default="")
+    constraints = models.TextField(blank=True, default="")
+    sample_test_cases = models.JSONField(blank=True, default=list)
+    hidden_test_cases = models.JSONField(blank=True, default=list)
     explanation = models.TextField(blank=True, default="")
     order = models.PositiveSmallIntegerField(default=1)
 
@@ -151,6 +179,9 @@ class PlaygroundAnswer(models.Model):
         related_name="answers",
     )
     selected_option_index = models.PositiveSmallIntegerField(null=True, blank=True)
+    text_answer = models.TextField(blank=True, default="")
+    code_answer = models.TextField(blank=True, default="")
+    execution_result = models.JSONField(blank=True, default=dict)
     is_correct = models.BooleanField(default=False)
     updated_at = models.DateTimeField(auto_now=True)
 

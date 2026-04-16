@@ -88,11 +88,6 @@ class ChangePasswordSerializer(serializers.Serializer):
 class ForgotPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False)
     identifier = serializers.CharField(required=False, allow_blank=False)
-    role = serializers.ChoiceField(
-        choices=["god", "admin", "teacher", "student"],
-        required=False,
-        allow_null=True,
-    )
 
     def validate(self, attrs):
         identifier = attrs.get("identifier")
@@ -111,22 +106,12 @@ class ForgotPasswordSerializer(serializers.Serializer):
 class VerifyOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
     otp = serializers.CharField(min_length=6, max_length=6)
-    role = serializers.ChoiceField(
-        choices=["god", "admin", "teacher", "student"],
-        required=False,
-        allow_null=True,
-    )
 
 
 class ResetPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
     otp = serializers.CharField(min_length=6, max_length=6)
     new_password = serializers.CharField(write_only=True)
-    role = serializers.ChoiceField(
-        choices=["god", "admin", "teacher", "student"],
-        required=False,
-        allow_null=True,
-    )
 
     def validate_new_password(self, value):
         validate_password(value)

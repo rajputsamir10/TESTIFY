@@ -1,6 +1,27 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+function alignLocalApiHost(baseUrl) {
+  if (typeof window === 'undefined') {
+    return baseUrl
+  }
+
+  try {
+    const apiUrl = new URL(baseUrl, window.location.origin)
+    const appHost = window.location.hostname
+    const localHosts = new Set(['localhost', '127.0.0.1'])
+
+    if (localHosts.has(appHost) && localHosts.has(apiUrl.hostname) && apiUrl.hostname !== appHost) {
+      apiUrl.hostname = appHost
+      return apiUrl.toString().replace(/\/$/, '')
+    }
+  } catch {
+    // Keep configured base URL if parsing fails.
+  }
+
+  return baseUrl
+}
+
+const API_BASE_URL = alignLocalApiHost(process.env.NEXT_PUBLIC_API_BASE_URL || '/api')
 
 const PUBLIC_PATH_PREFIXES = [
   '/login/',
@@ -39,6 +60,13 @@ api.interceptors.response.use(
       requestUrl.includes('/auth/me/') ||
       requestUrl.includes('/auth/logout/') ||
       requestUrl.includes('/auth/change-password/')
+    const isSessionCheckRequest = requestUrl.includes('/auth/me/')
+    const isPublicRoute = isPublicPath(currentPath)
+
+    // On public routes, a bootstrap /auth/me/ 401 should not trigger refresh.
+    if (status === 401 && isSessionCheckRequest && isPublicRoute) {
+      return Promise.reject(error)
+    }
 
     if (
       status === 401 &&
@@ -51,8 +79,7 @@ api.interceptors.response.use(
         await api.post('/auth/token/refresh/')
         return api(originalRequest)
       } catch (refreshError) {
-        const isSessionCheckRequest = requestUrl.includes('/auth/me/')
-        const shouldRedirect = !isSessionCheckRequest && !isPublicPath(currentPath)
+        const shouldRedirect = !isSessionCheckRequest && !isPublicRoute
 
         if (shouldRedirect) {
           const role = localStorage.getItem('role') || 'admin'

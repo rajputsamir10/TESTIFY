@@ -1,6 +1,6 @@
 # TESTIFY Frontend
 
-Role-based React client for the TESTIFY online examination platform.
+Role-based Next.js client for the TESTIFY online examination platform.
 
 ## What this app includes
 
@@ -14,9 +14,8 @@ Role-based React client for the TESTIFY online examination platform.
 
 ## Stack
 
+- Next.js 16
 - React 19
-- Vite 8
-- React Router 6
 - Axios
 - Tailwind CSS
 - React Hook Form + Zod
@@ -29,18 +28,18 @@ Role-based React client for the TESTIFY online examination platform.
 
 ## Environment
 
-The client reads `VITE_API_BASE_URL`.
+The client reads `NEXT_PUBLIC_API_BASE_URL`.
 
 Current local default in `.env`:
 
 ```env
-VITE_API_BASE_URL=http://127.0.0.1:8000/api
+NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000/api
 ```
 
 Notes:
 
-- If `VITE_API_BASE_URL` is not set, the client falls back to `/api`.
-- Vite dev server proxies `/api` to `http://127.0.0.1:8000`.
+- If `NEXT_PUBLIC_API_BASE_URL` is not set, the client falls back to `/api`.
+- The app now runs on the Next.js dev server; no Vite proxy is used.
 
 ## Local development
 
@@ -51,7 +50,7 @@ Notes:
 npm install
 ```
 
-3. Start Vite dev server:
+3. Start the Next.js dev server:
 
 ```bash
 npm run dev
@@ -62,8 +61,8 @@ npm run dev
 ## Available scripts
 
 - `npm run dev` - start development server
-- `npm run build` - create production build in `dist/`
-- `npm run preview` - preview built app locally
+- `npm run build` - create production build
+- `npm run start` - start the production server locally
 - `npm run lint` - run ESLint
 
 ## Authentication behavior
@@ -80,10 +79,10 @@ npm ci
 npm run build
 ```
 
-Deploy the generated `dist/` output using your static hosting setup, and ensure API/CORS/cookie settings are configured for your frontend origin.
+Deploy the Next.js app as a Node server or platform-supported web app, and ensure API/CORS/cookie settings are configured for your frontend origin.
 
 ## Troubleshooting
 
 - `401` loops usually indicate missing/expired refresh cookie or mismatched cookie domain/samesite settings.
 - CORS issues typically come from backend `CORS_ALLOWED_ORIGINS` or `CSRF_TRUSTED_ORIGINS` mismatch.
-- If API calls fail in development, confirm backend is running and `VITE_API_BASE_URL` is correct.
+- If API calls fail in development, confirm backend is running and `NEXT_PUBLIC_API_BASE_URL` is correct.

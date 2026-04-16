@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect, useMemo, useState } from 'react'
 import { Bell, CheckCheck } from 'lucide-react'
 import { notificationAPI } from '../api/notificationAPI'

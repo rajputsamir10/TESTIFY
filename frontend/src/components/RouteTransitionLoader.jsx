@@ -1,13 +1,17 @@
+"use client"
+
 import { useEffect, useRef, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { usePathname, useSearchParams } from 'next/navigation'
 
 const TRANSITION_MS = 320
 const SHOW_DELAY_MS = 60
 
 function RouteTransitionLoader() {
-  const location = useLocation()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const firstRenderRef = useRef(true)
   const [visible, setVisible] = useState(false)
+  const search = searchParams.toString()
 
   useEffect(() => {
     if (firstRenderRef.current) {
@@ -22,7 +26,7 @@ function RouteTransitionLoader() {
       window.clearTimeout(showTimer)
       window.clearTimeout(hideTimer)
     }
-  }, [location.pathname, location.search, location.hash])
+  }, [pathname, search])
 
   if (!visible) {
     return null

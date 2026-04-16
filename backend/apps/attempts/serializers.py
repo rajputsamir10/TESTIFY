@@ -149,6 +149,11 @@ class PlaygroundGenerateRequestSerializer(serializers.Serializer):
         default="medium",
     )
     question_count = serializers.IntegerField(required=False, min_value=1)
+    question_type = serializers.ChoiceField(
+        choices=["mixed", "mcq", "subjective", "coding", "dsa"],
+        required=False,
+        default="mixed",
+    )
 
     def validate_question_count(self, value):
         max_questions = int(getattr(settings, "PLAYGROUND_MAX_QUESTION_COUNT", 10))
@@ -172,7 +177,25 @@ class PlaygroundGenerateRequestSerializer(serializers.Serializer):
 
 class PlaygroundSubmitAnswerSerializer(serializers.Serializer):
     question_id = serializers.UUIDField()
-    selected_option_index = serializers.IntegerField(min_value=0, max_value=3)
+    selected_option_index = serializers.IntegerField(
+        min_value=0,
+        max_value=3,
+        required=False,
+        allow_null=True,
+    )
+    text_answer = serializers.CharField(required=False, allow_blank=True)
+    code_answer = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, attrs):
+        selected_option = attrs.get("selected_option_index")
+        text_answer = str(attrs.get("text_answer", "")).strip()
+        code_answer = str(attrs.get("code_answer", "")).strip()
+
+        if selected_option is None and not text_answer and not code_answer:
+            raise serializers.ValidationError(
+                "Each answer must include selected_option_index, text_answer, or code_answer."
+            )
+        return attrs
 
 
 class PlaygroundSubmitRequestSerializer(serializers.Serializer):
@@ -210,9 +233,14 @@ class PlaygroundSessionSerializer(serializers.ModelSerializer):
 
 
 class PlaygroundQuestionSerializer(serializers.ModelSerializer):
+    question_type = serializers.CharField(read_only=True)
     selected_option_index = serializers.SerializerMethodField()
+    text_answer = serializers.SerializerMethodField()
+    code_answer = serializers.SerializerMethodField()
+    execution_result = serializers.SerializerMethodField()
     is_correct = serializers.SerializerMethodField()
     correct_option_index = serializers.SerializerMethodField()
+    expected_answer = serializers.SerializerMethodField()
     explanation = serializers.SerializerMethodField()
 
     class Meta:
@@ -220,11 +248,22 @@ class PlaygroundQuestionSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "order",
+            "question_type",
             "question_text",
             "options",
+            "problem_statement",
+            "input_format",
+            "output_format",
+            "constraints",
+            "sample_test_cases",
+            "coding_language",
             "selected_option_index",
+            "text_answer",
+            "code_answer",
+            "execution_result",
             "is_correct",
             "correct_option_index",
+            "expected_answer",
             "explanation",
         ]
 
@@ -238,6 +277,24 @@ class PlaygroundQuestionSerializer(serializers.ModelSerializer):
             return None
         return answer.selected_option_index
 
+    def get_text_answer(self, obj):
+        answer = self._get_answer(obj)
+        if not answer:
+            return ""
+        return answer.text_answer
+
+    def get_code_answer(self, obj):
+        answer = self._get_answer(obj)
+        if not answer:
+            return ""
+        return answer.code_answer
+
+    def get_execution_result(self, obj):
+        answer = self._get_answer(obj)
+        if not answer:
+            return {}
+        return answer.execution_result or {}
+
     def get_is_correct(self, obj):
         answer = self._get_answer(obj)
         if not answer:
@@ -247,7 +304,16 @@ class PlaygroundQuestionSerializer(serializers.ModelSerializer):
     def get_correct_option_index(self, obj):
         if not self.context.get("include_solutions", False):
             return None
+        if obj.question_type != "mcq":
+            return None
         return obj.correct_option_index
+
+    def get_expected_answer(self, obj):
+        if not self.context.get("include_solutions", False):
+            return ""
+        if obj.question_type != "subjective":
+            return ""
+        return obj.expected_answer
 
     def get_explanation(self, obj):
         if not self.context.get("include_solutions", False):

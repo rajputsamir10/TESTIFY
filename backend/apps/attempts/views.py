@@ -193,6 +193,7 @@ class PlaygroundGenerateView(APIView):
             topic=serializer.validated_data["topic"],
             difficulty=serializer.validated_data["difficulty"],
             question_count=serializer.validated_data["question_count"],
+            question_type=serializer.validated_data["question_type"],
         )
         _, questions, answer_map = services.get_playground_questions_with_answers(
             request.user,

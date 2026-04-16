@@ -1,6 +1,21 @@
 from django.urls import path
 
 from apps.god.views import (
+    GodModeAntiCheatSimulationView,
+    GodModeApiMonitorView,
+    GodModeBugReportListCreateView,
+    GodModeBugReportPatchView,
+    GodModeDatabaseInspectorView,
+    GodModeExamSimulationView,
+    GodModeFeatureToggleListView,
+    GodModeFeatureTogglePatchView,
+    GodModeLogExportView,
+    GodModeLogListCreateView,
+    GodModeNotificationSimulationView,
+    GodModeOverviewView,
+    GodModeRoleAccessSimulationView,
+    GodModeSettingsView,
+    GodModeStressTestView,
     GodOrganizationDetailView,
     GodOrganizationListCreateView,
     GodOrganizationPlanPatchView,
@@ -20,4 +35,21 @@ urlpatterns = [
     path("users/", GodUserListCreateView.as_view()),
     path("users/<uuid:user_id>/", GodUserDetailView.as_view()),
     path("users/<uuid:user_id>/reset-password/", GodUserResetPasswordView.as_view()),
+
+    # God Mode - Internal testing and simulation dashboard APIs.
+    path("god-mode/overview/", GodModeOverviewView.as_view()),
+    path("god-mode/exam-simulation/", GodModeExamSimulationView.as_view()),
+    path("god-mode/anti-cheat/", GodModeAntiCheatSimulationView.as_view()),
+    path("god-mode/role-access/", GodModeRoleAccessSimulationView.as_view()),
+    path("god-mode/api-monitor/", GodModeApiMonitorView.as_view()),
+    path("god-mode/database-inspector/", GodModeDatabaseInspectorView.as_view()),
+    path("god-mode/toggles/", GodModeFeatureToggleListView.as_view()),
+    path("god-mode/toggles/<str:key>/", GodModeFeatureTogglePatchView.as_view()),
+    path("god-mode/logs/", GodModeLogListCreateView.as_view()),
+    path("god-mode/logs/export/", GodModeLogExportView.as_view()),
+    path("god-mode/stress-test/", GodModeStressTestView.as_view()),
+    path("god-mode/bug-reports/", GodModeBugReportListCreateView.as_view()),
+    path("god-mode/bug-reports/<uuid:bug_id>/", GodModeBugReportPatchView.as_view()),
+    path("god-mode/settings/", GodModeSettingsView.as_view()),
+    path("god-mode/notification-simulation/", GodModeNotificationSimulationView.as_view()),
 ]

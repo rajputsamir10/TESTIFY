@@ -18,6 +18,10 @@ backend/staticfiles/
 # Frontend runtime/generated
 frontend/node_modules/
 frontend/dist/
+frontend/.next/
+frontend/.turbo/
+frontend/out/
+frontend/coverage/
 frontend/.env
 frontend/.env.local
 frontend/.env.*.local
@@ -25,5 +29,15 @@ frontend/.env.*.local
 # General logs and temp
 *.log
 *.tmp
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+.env
+.env.*
+!.env.example
 .DS_Store
 Thumbs.db
