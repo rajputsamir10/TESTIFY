@@ -4,7 +4,7 @@ services:
     runtime: python
     rootDir: backend
     buildCommand: pip install -r requirements.txt
-    startCommand: python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn testify_backend.wsgi:application --bind 0.0.0.0:$PORT
+    startCommand: bash startup.sh
     envVars:
       - key: DJANGO_ENV
         value: production
@@ -13,9 +13,7 @@ services:
       - key: SECRET_KEY
         sync: false
       - key: DATABASE_URL
-        fromDatabase:
-          name: testify-db
-          property: connectionString
+        sync: false
       - key: DB_SSLMODE
         value: require
       - key: ALLOWED_HOSTS
@@ -67,7 +65,5 @@ services:
       - key: NEXT_PUBLIC_API_BASE_URL
         value: https://testify-backend.onrender.com/api
 
-databases:
-  - name: testify-db
-    databaseName: testify
-    user: testify
+# Note: Using Supabase PostgreSQL instead of Render's managed database
+# DATABASE_URL environment variable must be set manually in Render dashboard
